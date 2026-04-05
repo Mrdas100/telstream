@@ -97,7 +97,8 @@ body{background:var(--bg);color:var(--txt);font-family:var(--font);min-height:10
       <input type="url" id="iptvUrl" placeholder="http://... او https://... او rtsp://...">
     </div>
     <div class="tip">
-      يدعم: <strong>Xtream Codes</strong> · <strong>m3u8 HLS</strong> · <strong>RTSP</strong> · <strong>TS</strong> · <strong>MP4</strong>
+      يدعم: <strong>Xtream Codes</strong> · <strong>m3u8</strong> · <strong>RTSP</strong> · <strong>TS</strong><br>
+      روابط Xtream بدون امتداد تُضاف اليها .ts تلقائياً
     </div>
   </div>
 
@@ -208,66 +209,64 @@ async function pollStatus(){
 
 app.get("/", (req, res) => res.send(HTML));
 
-// ===== كشف نوع الرابط =====
+// ===== كشف نوع الرابط وإصلاحه =====
 function detectFormat(url) {
-  if (url.includes(".m3u8"))        return { fmt: "hls",    isHls: true  };
-  if (url.includes(".ts"))          return { fmt: "mpegts", isMpegts: true };
-  if (url.startsWith("rtsp://"))    return { fmt: "rtsp",   isRtsp: true };
-  if (url.startsWith("rtmp://"))    return { fmt: "rtmp",   isRtmp: true };
-  if (url.includes(".mp4"))         return { fmt: "mp4"  };
-  // Xtream Codes — أرقام في المسار بدون امتداد
-  if (/\/\d+\/\d+\/\d+$/.test(url)) return { fmt: "mpegts", isXtream: true };
-  // أي رابط HTTP آخر بدون امتداد
-  return { fmt: "mpegts", isUnknown: true };
+  // HLS
+  if (url.includes(".m3u8")) return { fmt: "hls", finalUrl: url };
+  // TS صريح
+  if (url.includes(".ts"))   return { fmt: "mpegts", finalUrl: url };
+  // RTSP
+  if (url.startsWith("rtsp://")) return { fmt: "rtsp", finalUrl: url };
+  // RTMP
+  if (url.startsWith("rtmp://")) return { fmt: "rtmp", finalUrl: url };
+  // MP4
+  if (url.includes(".mp4"))  return { fmt: "mp4", finalUrl: url };
+
+  // Xtream Codes — رقم/رقم/رقم بدون امتداد → أضف .ts
+  if (/\/\d+\/\d+\/\d+$/.test(url)) {
+    const finalUrl = url + ".ts";
+    console.log("🔧 Xtream detected → " + finalUrl);
+    return { fmt: "mpegts", finalUrl };
+  }
+
+  // أي رابط HTTP آخر مجهول → جرب mpegts
+  return { fmt: "mpegts", finalUrl: url };
 }
 
-// ===== تشغيل FFmpeg مع إعادة المحاولة =====
+// ===== تشغيل FFmpeg =====
 function startFFmpeg(session, iptvUrl, rtmp, width, height, bitrate) {
-  const { fmt, isHls, isRtsp, isRtmp, isXtream, isUnknown } = detectFormat(iptvUrl);
+  const { fmt, finalUrl } = detectFormat(iptvUrl);
+  const isRtsp = fmt === "rtsp";
+  const isRtmp = fmt === "rtmp";
 
-  console.log(`🔍 نوع الرابط: ${fmt} | ${iptvUrl}`);
-
-  const inputArgs = [];
-
-  // User-Agent لتجاوز الحماية في Xtream وغيرها
-  if (!isRtsp && !isRtmp) {
-    inputArgs.push("-user_agent", "VLC/3.0.18 LibVLC/3.0.18");
-  }
-
-  // إعادة الاتصال للبث المباشر
-  if (!isRtsp) {
-    inputArgs.push(
-      "-reconnect",         "1",
-      "-reconnect_streamed","1",
-      "-reconnect_delay_max","5"
-    );
-  }
-
-  // وقت تحليل أطول للروابط المجهولة
-  inputArgs.push(
-    "-analyzeduration", "20000000",
-    "-probesize",       "20000000"
-  );
-
-  // إجبار نوع الإدخال لـ Xtream والروابط بدون امتداد
-  if (isXtream || isUnknown || fmt === "mpegts") {
-    inputArgs.push("-f", "mpegts");
-  }
-
-  inputArgs.push("-i", iptvUrl);
+  console.log(`🔍 نوع: ${fmt} | ${finalUrl}`);
 
   const args = [
-    ...inputArgs,
+    // User-Agent لتجاوز الحماية
+    ...((!isRtsp && !isRtmp) ? ["-user_agent", "VLC/3.0.18 LibVLC/3.0.18"] : []),
 
-    // إصلاح التواريخ المكسورة — ضروري لـ IPTV
-    "-fflags",       "+genpts+igndts",
-    "-err_detect",   "ignore_err",
+    // إعادة الاتصال
+    ...(!isRtsp ? ["-reconnect", "1", "-reconnect_streamed", "1", "-reconnect_delay_max", "5"] : []),
+
+    // وقت تحليل كافٍ
+    "-analyzeduration", "20000000",
+    "-probesize",       "20000000",
+
+    // إجبار نوع الإدخال لـ mpegts
+    ...(fmt === "mpegts" ? ["-f", "mpegts"] : []),
+
+    // الرابط النهائي (مع .ts إذا كان Xtream)
+    "-i", finalUrl,
+
+    // إصلاح التواريخ
+    "-fflags",    "+genpts+igndts",
+    "-err_detect","ignore_err",
 
     // أخذ أول تراك فيديو وصوت
     "-map", "0:v:0",
     "-map", "0:a:0",
 
-    // فيديو — إعادة ترميز كاملة
+    // فيديو
     "-c:v",      "libx264",
     "-preset",   "veryfast",
     "-tune",     "zerolatency",
@@ -278,21 +277,21 @@ function startFFmpeg(session, iptvUrl, rtmp, width, height, bitrate) {
     "-g",        "60",
     "-keyint_min","60",
     "-sc_threshold","0",
-    "-pix_fmt",  "yuv420p",        // ضروري لـ Telegram
+    "-pix_fmt",  "yuv420p",
 
     // صوت
-    "-c:a",  "aac",
-    "-b:a",  "128k",
-    "-ar",   "44100",
-    "-ac",   "2",
+    "-c:a", "aac",
+    "-b:a", "128k",
+    "-ar",  "44100",
+    "-ac",  "2",
 
-    // إخراج RTMP
-    "-f",         "flv",
-    "-flvflags",  "no_duration_filesize",
+    // إخراج
+    "-f",        "flv",
+    "-flvflags", "no_duration_filesize",
     rtmp
   ];
 
-  console.log("🚀 FFmpeg يبدأ:", args.join(" ").slice(0, 200));
+  console.log("🚀 FFmpeg:", args.join(" ").slice(0, 300));
   const ff = spawn("ffmpeg", args);
   session.ff = ff;
 
@@ -300,9 +299,6 @@ function startFFmpeg(session, iptvUrl, rtmp, width, height, bitrate) {
     const line = d.toString().trim();
     const m = line.match(/fps=\s*(\S+).*bitrate=\s*(\S+)/);
     if (m) { session.fps = m[1]; session.bitrate = m[2]; session.hasVideo = true; }
-    if (line.includes("Error") || line.includes("Invalid") || line.includes("error")) {
-      console.error("⚠️", line.slice(0, 150));
-    }
     session.logs.push(line.slice(0, 150));
     if (session.logs.length > 50) session.logs.shift();
   });
@@ -365,7 +361,7 @@ app.get("/api/stream/status/:id", (req, res) => {
   const s = sessions.get(req.params.id);
   if (!s || !s.active) return res.json({ active: false });
   res.json({
-    active: true,
+    active:   true,
     elapsed:  Math.floor((Date.now() - s.startTime) / 1000),
     fps:      s.fps,
     bitrate:  s.bitrate,
