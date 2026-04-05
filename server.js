@@ -8,6 +8,7 @@ app.use(express.json());
 
 const sessions = new Map();
 
+// ===== HTML =====
 const HTML = `<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -27,6 +28,8 @@ body{background:var(--bg);color:var(--txt);font-family:var(--font);min-height:10
 .dot{width:7px;height:7px;border-radius:50%;background:var(--dim);transition:.3s}
 .badge.live{border-color:rgba(231,76,60,.35);background:rgba(231,76,60,.1);color:#ff6b6b}
 .badge.live .dot{background:var(--red);animation:pulse 1.2s infinite}
+.badge.reconnect{border-color:rgba(255,165,0,.35);background:rgba(255,165,0,.1);color:orange}
+.badge.reconnect .dot{background:orange;animation:pulse 1.2s infinite}
 @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.75)}}
 .main{flex:1;padding:18px;display:flex;flex-direction:column;gap:15px;overflow-y:auto}
 .card{background:var(--s1);border:1px solid var(--bd);border-radius:14px;padding:16px}
@@ -34,8 +37,8 @@ body{background:var(--bg);color:var(--txt);font-family:var(--font);min-height:10
 .field{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
 .field:last-child{margin-bottom:0}
 .field label{font-size:12px;color:var(--dim)}
-.field input{background:var(--s2);border:1px solid var(--bd);border-radius:9px;padding:11px 13px;color:var(--txt);font-family:var(--font);font-size:14px;outline:none;transition:border-color .2s;direction:ltr;text-align:right;width:100%}
-.field input:focus{border-color:var(--acc)}
+.field input,.field select{background:var(--s2);border:1px solid var(--bd);border-radius:9px;padding:11px 13px;color:var(--txt);font-family:var(--font);font-size:14px;outline:none;transition:border-color .2s;direction:ltr;text-align:right;width:100%;-webkit-appearance:none}
+.field input:focus,.field select:focus{border-color:var(--acc)}
 .field input::placeholder{color:var(--dim);opacity:.5}
 .tip{font-size:11.5px;color:var(--dim);background:rgba(42,171,238,.06);border:1px solid rgba(42,171,238,.15);border-radius:9px;padding:10px 12px;line-height:1.7}
 .tip strong{color:var(--acc);font-weight:500}
@@ -46,13 +49,16 @@ body{background:var(--bg);color:var(--txt);font-family:var(--font);min-height:10
 .preset-icon svg{width:17px;height:17px;fill:white}
 .preset-name{font-size:13px;font-weight:500}
 .preset-url{font-size:10px;color:var(--dim);direction:ltr;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:220px}
+.qrow{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.qbtn{padding:10px;border-radius:9px;border:1px solid var(--bd);background:var(--s2);color:var(--dim);font-family:var(--font);font-size:12px;font-weight:500;cursor:pointer;text-align:center;transition:.2s}
+.qbtn.sel{border-color:var(--acc);background:rgba(42,171,238,.1);color:var(--acc)}
 .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
 .stat{background:var(--s2);border:1px solid var(--bd);border-radius:10px;padding:10px 8px;text-align:center}
 .stat-v{font-size:17px;font-weight:600;color:var(--acc);font-variant-numeric:tabular-nums}
 .stat-l{font-size:10px;color:var(--dim);margin-top:2px}
-.log{background:var(--s2);border:1px solid var(--bd);border-radius:9px;padding:10px 12px;font-size:10.5px;color:var(--dim);max-height:90px;overflow-y:auto;direction:ltr;text-align:left;font-family:monospace;scrollbar-width:thin;margin-top:10px}
+.log{background:var(--s2);border:1px solid var(--bd);border-radius:9px;padding:10px 12px;font-size:10.5px;color:var(--dim);max-height:100px;overflow-y:auto;direction:ltr;text-align:left;font-family:monospace;scrollbar-width:thin;margin-top:10px}
 .log p{padding:1px 0}
-.log .ok{color:var(--grn)}.log .err{color:var(--red)}.log .info{color:var(--acc)}
+.log .ok{color:var(--grn)}.log .err{color:var(--red)}.log .info{color:var(--acc)}.log .warn{color:orange}
 .footer{padding:14px 18px;background:var(--s1);border-top:1px solid var(--bd)}
 .btn-go{width:100%;padding:15px;border-radius:13px;border:none;background:var(--acc);color:white;font-family:var(--font);font-size:16px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:.2s}
 .btn-go:active{transform:scale(.98)}
@@ -70,27 +76,40 @@ body{background:var(--bg);color:var(--txt);font-family:var(--font);min-height:10
   <div class="badge" id="badge"><span class="dot"></span><span id="badgeTxt">غير نشط</span></div>
 </div>
 <div class="main">
+
   <div class="card">
-    <div class="card-title">روابط IPTV تجريبية</div>
+    <div class="card-title">روابط تجريبية</div>
     <div class="presets">
-      <div class="preset" onclick="setPreset(this,'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8','MUX Test')">
+      <div class="preset" onclick="setPreset(this,'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8')">
         <div class="preset-icon"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
         <div><div class="preset-name">MUX Test Stream</div><div class="preset-url">test-streams.mux.dev</div></div>
       </div>
-      <div class="preset" onclick="setPreset(this,'https://cph-p2p-msl.akamaized.net/hls/live/2000341/test/master.m3u8','Akamai Test')">
+      <div class="preset" onclick="setPreset(this,'https://cph-p2p-msl.akamaized.net/hls/live/2000341/test/master.m3u8')">
         <div class="preset-icon"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
         <div><div class="preset-name">Akamai Test Live</div><div class="preset-url">akamaized.net</div></div>
       </div>
     </div>
   </div>
+
   <div class="card">
     <div class="card-title">رابط البث</div>
     <div class="field">
       <label>رابط IPTV (m3u8 / rtsp / ts)</label>
       <input type="url" id="iptvUrl" placeholder="https://... او rtsp://...">
     </div>
-    <div class="tip">يدعم: <strong>m3u8</strong> · <strong>RTSP</strong> · <strong>TS</strong> · <strong>MP4</strong></div>
+    <div class="tip">يدعم: <strong>m3u8 HLS</strong> · <strong>RTSP</strong> · <strong>TS</strong> · <strong>MP4</strong></div>
   </div>
+
+  <div class="card">
+    <div class="card-title">جودة البث</div>
+    <div class="qrow">
+      <button class="qbtn" onclick="setQ(this,'1280','720','2500k')">720p — 2.5 Mbps</button>
+      <button class="qbtn sel" onclick="setQ(this,'854','480','1000k')">480p — 1 Mbps</button>
+      <button class="qbtn" onclick="setQ(this,'1920','1080','4500k')">1080p — 4.5 Mbps</button>
+      <button class="qbtn" onclick="setQ(this,'640','360','600k')">360p — 0.6 Mbps</button>
+    </div>
+  </div>
+
   <div class="card">
     <div class="card-title">اعدادات تيليجرام</div>
     <div class="field">
@@ -103,6 +122,7 @@ body{background:var(--bg);color:var(--txt);font-family:var(--font);min-height:10
     </div>
     <div class="tip">في تيليجرام: القناة - <strong>بث مباشر</strong> - <strong>تطبيق خارجي</strong> - انسخ المفتاح</div>
   </div>
+
   <div class="card" id="statsCard" style="display:none">
     <div class="card-title">احصائيات البث</div>
     <div class="stats">
@@ -110,23 +130,47 @@ body{background:var(--bg);color:var(--txt);font-family:var(--font);min-height:10
       <div class="stat"><div class="stat-v" id="sBitrate">--</div><div class="stat-l">Kbps</div></div>
       <div class="stat"><div class="stat-v" id="sTime">00:00</div><div class="stat-l">مدة البث</div></div>
     </div>
-    <div class="log" id="logBox"><p class="info">جاري البث...</p></div>
+    <div class="log" id="logBox"><p class="info">في انتظار FFmpeg...</p></div>
   </div>
+
 </div>
 <div class="footer">
   <button class="btn-go" id="btnGo" onclick="toggle()">
     <svg viewBox="0 0 24 24"><path d="M21 3L3 10.53v.98l6.84 2.65L12.48 21h.98L21 3z"/></svg>
-    ابدأ البث إلى تيليجرام
+    ابدأ البث الى تيليجرام
   </button>
   <div class="timer" id="timerTxt"></div>
 </div>
 <script>
 const SERVER=window.location.origin;
 let active=false,sessionId=null,pollInterval=null;
-function setPreset(el,url){document.getElementById('iptvUrl').value=url;document.querySelectorAll('.preset').forEach(p=>p.classList.remove('sel'));el.classList.add('sel');}
-function log(msg,cls){const box=document.getElementById('logBox');const p=document.createElement('p');p.className=cls||'';p.textContent='> '+msg;box.appendChild(p);box.scrollTop=box.scrollHeight;}
-function fmtTime(s){const h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60;return h?[h,m,sec].map(x=>String(x).padStart(2,'0')).join(':'):[m,sec].map(x=>String(x).padStart(2,'0')).join(':');}
+let qW='854',qH='480',qB='1000k';
+
+function setPreset(el,url){
+  document.getElementById('iptvUrl').value=url;
+  document.querySelectorAll('.preset').forEach(p=>p.classList.remove('sel'));
+  el.classList.add('sel');
+}
+function setQ(el,w,h,b){
+  qW=w;qH=h;qB=b;
+  document.querySelectorAll('.qbtn').forEach(x=>x.classList.remove('sel'));
+  el.classList.add('sel');
+}
+function log(msg,cls){
+  const box=document.getElementById('logBox');
+  const p=document.createElement('p');
+  p.className=cls||'';
+  p.textContent='> '+msg;
+  box.appendChild(p);
+  box.scrollTop=box.scrollHeight;
+  if(box.children.length>40)box.removeChild(box.children[0]);
+}
+function fmtTime(s){
+  const h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60;
+  return h?[h,m,sec].map(x=>String(x).padStart(2,'0')).join(':'):[m,sec].map(x=>String(x).padStart(2,'0')).join(':');
+}
 async function toggle(){active?await stopStream():await startStream();}
+
 async function startStream(){
   const iptvUrl=document.getElementById('iptvUrl').value.trim();
   const rtmpServer=document.getElementById('rtmpServer').value.trim();
@@ -135,7 +179,11 @@ async function startStream(){
   if(!streamKey)return alert('ادخل مفتاح البث');
   sessionId='sess_'+Date.now();
   try{
-    const r=await fetch(SERVER+'/api/stream/start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({iptvUrl,rtmpServer,streamKey,sessionId})});
+    const r=await fetch(SERVER+'/api/stream/start',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({iptvUrl,rtmpServer,streamKey,sessionId,width:qW,height:qH,bitrate:qB})
+    });
     const d=await r.json();
     if(!r.ok)throw new Error(d.error);
     active=true;
@@ -150,9 +198,16 @@ async function startStream(){
     pollInterval=setInterval(pollStatus,3000);
   }catch(e){alert('خطأ: '+e.message);}
 }
+
 async function stopStream(){
   clearInterval(pollInterval);
-  try{await fetch(SERVER+'/api/stream/stop',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sessionId})});}catch(_){}
+  try{
+    await fetch(SERVER+'/api/stream/stop',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({sessionId})
+    });
+  }catch(_){}
   active=false;
   document.getElementById('badge').className='badge';
   document.getElementById('badgeTxt').textContent='غير نشط';
@@ -162,17 +217,27 @@ async function stopStream(){
   btn.innerHTML='<svg viewBox="0 0 24 24" style="fill:white;width:18px;height:18px"><path d="M21 3L3 10.53v.98l6.84 2.65L12.48 21h.98L21 3z"/></svg> ابدأ البث الى تيليجرام';
   log('تم ايقاف البث','err');
 }
+
 async function pollStatus(){
   if(!sessionId)return;
   try{
     const r=await fetch(SERVER+'/api/stream/status/'+sessionId);
     const d=await r.json();
-    if(!d.active){if(active)stopStream();return;}
+    if(!d.active){
+      if(active){
+        document.getElementById('badge').className='badge reconnect';
+        document.getElementById('badgeTxt').textContent='اعادة اتصال...';
+        log('السيرفر يعيد الاتصال تلقائياً...','warn');
+      }
+      return;
+    }
+    document.getElementById('badge').className='badge live';
+    document.getElementById('badgeTxt').textContent='بث مباشر';
     document.getElementById('sFps').textContent=d.fps||'--';
     document.getElementById('sBitrate').textContent=d.bitrate?d.bitrate.replace('kbits/s','').trim():'--';
     document.getElementById('sTime').textContent=fmtTime(d.elapsed||0);
     document.getElementById('timerTxt').textContent='مدة البث: '+fmtTime(d.elapsed||0);
-    if(d.logs&&d.logs.length&&d.logs[d.logs.length-1].includes('fps='))log('البث يعمل بنجاح','ok');
+    if(d.hasVideo)log('الفيديو يعمل بنجاح','ok');
   }catch(_){}
 }
 </script>
@@ -181,55 +246,149 @@ async function pollStatus(){
 
 app.get("/", (req, res) => res.send(HTML));
 
-app.post("/api/stream/start", (req, res) => {
-  const { iptvUrl, rtmpServer, streamKey, sessionId } = req.body;
-  if (!iptvUrl || !streamKey) return res.status(400).json({ error: "iptvUrl و streamKey مطلوبان" });
-  if (sessions.has(sessionId)) return res.status(400).json({ error: "جلسة نشطة" });
+// ===== دالة تشغيل FFmpeg مع إعادة المحاولة =====
+function startFFmpeg(session, iptvUrl, rtmp, width, height, bitrate) {
+  const args = [
+    // خيارات الشبكة والاتصال
+    "-reconnect", "1",
+    "-reconnect_streamed", "1",
+    "-reconnect_delay_max", "5",
+    "-timeout", "10000000",        // 10 ثانية timeout
+    "-analyzeduration", "10000000",
+    "-probesize", "10000000",
 
-  const rtmp = `${rtmpServer || "rtmp://dc4-1.rtmp.t.me/s"}/${streamKey}`;
-  console.log("🚀 بث:", iptvUrl, "->", rtmp);
+    // المصدر
+    "-i", iptvUrl,
 
-  const ff = spawn("ffmpeg", [
-    "-re", "-i", iptvUrl,
-    "-c:v", "libx264", "-preset", "veryfast", "-tune", "zerolatency",
-    "-b:v", "2500k", "-maxrate", "2500k", "-bufsize", "5000k", "-g", "50",
-    "-c:a", "aac", "-b:a", "128k", "-ar", "44100",
-    "-f", "flv", rtmp
-  ]);
+    // إصلاح التواريخ المكسورة
+    "-fflags", "+genpts+igndts",
 
-  const session = { ff, logs: [], startTime: Date.now(), fps: "--", bitrate: "--" };
+    // فيديو — إعادة ترميز كاملة لضمان التوافق
+    "-map", "0:v:0",               // تأكد من أخذ الفيديو
+    "-map", "0:a:0",               // تأكد من أخذ الصوت
+    "-c:v", "libx264",
+    "-preset", "veryfast",
+    "-tune", "zerolatency",
+    "-b:v", bitrate || "2500k",
+    "-maxrate", bitrate || "2500k",
+    "-bufsize", "6000k",
+    "-vf", `scale=${width||1280}:${height||720}:force_original_aspect_ratio=decrease,pad=${width||1280}:${height||720}:(ow-iw)/2:(oh-ih)/2`,
+    "-g", "60",                    // keyframe كل 2 ثانية عند 30fps
+    "-keyint_min", "60",
+    "-sc_threshold", "0",
+
+    // صوت
+    "-c:a", "aac",
+    "-b:a", "128k",
+    "-ar", "44100",
+    "-ac", "2",                    // stereo دائماً
+
+    // الإخراج
+    "-f", "flv",
+    "-flvflags", "no_duration_filesize",
+    rtmp
+  ];
+
+  console.log("🚀 FFmpeg يبدأ:", iptvUrl, "→", rtmp);
+  const ff = spawn("ffmpeg", args);
+  session.ff = ff;
+  session.retries = (session.retries || 0);
 
   ff.stderr.on("data", d => {
     const line = d.toString().trim();
+
+    // استخراج FPS والـ bitrate
     const m = line.match(/fps=\s*(\S+).*bitrate=\s*(\S+)/);
-    if (m) { session.fps = m[1]; session.bitrate = m[2]; }
-    session.logs.push(line.slice(0, 120));
-    if (session.logs.length > 30) session.logs.shift();
+    if (m) {
+      session.fps = m[1];
+      session.bitrate = m[2];
+      session.hasVideo = true;
+    }
+
+    // تحذيرات مهمة
+    if (line.includes("No such file") || line.includes("Connection refused")) {
+      console.error("❌ خطأ في الرابط:", line);
+    }
+
+    session.logs.push(line.slice(0, 150));
+    if (session.logs.length > 50) session.logs.shift();
   });
 
-  ff.on("close", () => sessions.delete(sessionId));
-  ff.on("error", () => sessions.delete(sessionId));
+  ff.on("close", (code) => {
+    console.log(`FFmpeg انتهى (كود ${code}), محاولات: ${session.retries}`);
+    session.hasVideo = false;
+
+    // إعادة المحاولة تلقائياً إذا الجلسة لا تزال نشطة
+    if (session.active && session.retries < 10) {
+      session.retries++;
+      const delay = Math.min(session.retries * 3, 15) * 1000;
+      console.log(`🔄 إعادة المحاولة ${session.retries} بعد ${delay/1000}s`);
+      session.logs.push(`[إعادة محاولة ${session.retries} بعد ${delay/1000} ثانية]`);
+      setTimeout(() => {
+        if (session.active) {
+          startFFmpeg(session, iptvUrl, rtmp, width, height, bitrate);
+        }
+      }, delay);
+    } else if (session.retries >= 10) {
+      console.log("❌ تجاوز الحد الأقصى للمحاولات");
+      session.active = false;
+    }
+  });
+
+  ff.on("error", (err) => {
+    console.error("FFmpeg خطأ:", err.message);
+    session.logs.push("[خطأ: " + err.message + "]");
+  });
+}
+
+// ===== API =====
+app.post("/api/stream/start", (req, res) => {
+  const { iptvUrl, rtmpServer, streamKey, sessionId, width, height, bitrate } = req.body;
+
+  if (!iptvUrl || !streamKey)
+    return res.status(400).json({ error: "iptvUrl و streamKey مطلوبان" });
+  if (sessions.has(sessionId))
+    return res.status(400).json({ error: "جلسة نشطة بالفعل" });
+
+  const rtmp = `${rtmpServer || "rtmp://dc4-1.rtmp.t.me/s"}/${streamKey}`;
+
+  const session = {
+    logs: [],
+    startTime: Date.now(),
+    fps: "--",
+    bitrate: "--",
+    hasVideo: false,
+    active: true,
+    retries: 0,
+    ff: null
+  };
 
   sessions.set(sessionId, session);
+  startFFmpeg(session, iptvUrl, rtmp, width, height, bitrate);
   res.json({ success: true });
 });
 
 app.post("/api/stream/stop", (req, res) => {
   const s = sessions.get(req.body.sessionId);
   if (!s) return res.status(404).json({ error: "غير موجود" });
-  s.ff.kill("SIGTERM");
+
+  s.active = false;  // يوقف إعادة المحاولات
+  if (s.ff) s.ff.kill("SIGTERM");
   sessions.delete(req.body.sessionId);
+  console.log("⏹️ تم الإيقاف");
   res.json({ success: true });
 });
 
 app.get("/api/stream/status/:id", (req, res) => {
   const s = sessions.get(req.params.id);
-  if (!s) return res.json({ active: false });
+  if (!s || !s.active) return res.json({ active: false });
   res.json({
     active: true,
     elapsed: Math.floor((Date.now() - s.startTime) / 1000),
     fps: s.fps,
     bitrate: s.bitrate,
+    hasVideo: s.hasVideo,
+    retries: s.retries,
     logs: s.logs.slice(-5)
   });
 });
