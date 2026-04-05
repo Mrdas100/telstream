@@ -1,11 +1,17 @@
 {
-  "name": "telstream-iptv",
+  "name": "telstream",
   "version": "2.0.0",
-  "description": "IPTV to Telegram Live Stream",
+  "description": "بث IPTV مباشر إلى Telegram و RTMP",
   "main": "server.js",
-  "scripts": { "start": "node server.js" },
+  "scripts": {
+    "start":   "node server.js",
+    "dev":     "node --watch server.js"
+  },
   "dependencies": {
-    "cors": "^2.8.5",
+    "cors":    "^2.8.5",
     "express": "^4.18.2"
+  },
+  "engines": {
+    "node": ">=18"
   }
 }

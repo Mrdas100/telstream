@@ -2,252 +2,521 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>TelStream IPTV</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TelStream — بث IPTV إلى Telegram</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600&display=swap');
-:root{--bg:#08090f;--s1:#0f1018;--s2:#161720;--s3:#1d1e2b;--bd:rgba(255,255,255,0.07);--acc:#2AABEE;--acc2:#1a8fd1;--red:#e74c3c;--grn:#27ae60;--txt:#eef0f8;--dim:#7a7d9c;--font:'IBM Plex Sans Arabic',sans-serif}
-*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-body{background:var(--bg);color:var(--txt);font-family:var(--font);min-height:100svh;display:flex;flex-direction:column}
-.hdr{padding:14px 18px;background:var(--s1);border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between}
-.brand{display:flex;align-items:center;gap:10px;font-size:17px;font-weight:600}
-.brand-icon{width:34px;height:34px;background:var(--acc);border-radius:9px;display:flex;align-items:center;justify-content:center}
-.brand-icon svg{width:19px;height:19px;fill:white}
-.badge{display:flex;align-items:center;gap:5px;padding:5px 11px;border-radius:20px;font-size:11px;font-weight:500;background:var(--s2);border:1px solid var(--bd);transition:.3s}
-.dot{width:7px;height:7px;border-radius:50%;background:var(--dim);transition:.3s}
-.badge.live{border-color:rgba(231,76,60,.35);background:rgba(231,76,60,.1);color:#ff6b6b}
-.badge.live .dot{background:var(--red);animation:pulse 1.2s infinite}
-@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.75)}}
-.main{flex:1;padding:18px;display:flex;flex-direction:column;gap:15px;overflow-y:auto}
-.card{background:var(--s1);border:1px solid var(--bd);border-radius:14px;padding:16px}
-.card-title{font-size:11px;font-weight:500;letter-spacing:.8px;color:var(--dim);text-transform:uppercase;margin-bottom:12px}
-.field{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
-.field:last-child{margin-bottom:0}
-.field label{font-size:12px;color:var(--dim)}
-.field input,.field select{background:var(--s2);border:1px solid var(--bd);border-radius:9px;padding:11px 13px;color:var(--txt);font-family:var(--font);font-size:14px;outline:none;transition:border-color .2s;direction:ltr;text-align:right;width:100%;appearance:none}
-.field select{text-align:right;direction:rtl}
-.field input:focus,.field select:focus{border-color:var(--acc)}
-.field input::placeholder{color:var(--dim);opacity:.5}
-.tip{font-size:11.5px;color:var(--dim);background:rgba(42,171,238,.06);border:1px solid rgba(42,171,238,.15);border-radius:9px;padding:10px 12px;line-height:1.7}
-.tip strong{color:var(--acc);font-weight:500}
-.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.stat{background:var(--s2);border:1px solid var(--bd);border-radius:10px;padding:10px 8px;text-align:center}
-.stat-v{font-size:17px;font-weight:600;color:var(--acc);font-variant-numeric:tabular-nums}
-.stat-l{font-size:10px;color:var(--dim);margin-top:2px}
-.log{background:var(--s2);border:1px solid var(--bd);border-radius:9px;padding:10px 12px;font-size:10.5px;color:var(--dim);max-height:90px;overflow-y:auto;direction:ltr;text-align:left;font-family:monospace;scrollbar-width:thin}
-.log p{padding:1px 0}
-.log .ok{color:var(--grn)}.log .err{color:var(--red)}.log .info{color:var(--acc)}
-.presets{display:flex;flex-direction:column;gap:6px}
-.preset{display:flex;align-items:center;gap:10px;padding:11px 13px;border-radius:10px;border:1px solid var(--bd);background:var(--s2);cursor:pointer;transition:.2s;text-align:right}
-.preset:hover,.preset.sel{border-color:var(--acc);background:rgba(42,171,238,.07)}
-.preset-icon{width:32px;height:32px;border-radius:8px;background:var(--acc);display:flex;align-items:center;justify-content:center;flex-shrink:0}
-.preset-icon svg{width:17px;height:17px;fill:white}
-.preset-info{flex:1}
-.preset-name{font-size:13px;font-weight:500}
-.preset-url{font-size:10px;color:var(--dim);direction:ltr;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:220px}
-.footer{padding:14px 18px;background:var(--s1);border-top:1px solid var(--bd)}
-.btn-go{width:100%;padding:15px;border-radius:13px;border:none;background:var(--acc);color:white;font-family:var(--font);font-size:16px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:.2s}
-.btn-go:active{transform:scale(.98)}
-.btn-go.stop{background:var(--red)}
-.btn-go svg{width:18px;height:18px;fill:white}
-.timer{font-size:13px;color:var(--dim);text-align:center;margin-top:8px;font-variant-numeric:tabular-nums;min-height:18px}
+:root {
+  --bg0: #04040E;
+  --bg1: #09091C;
+  --bg2: #0E0E26;
+  --bg3: #14143A;
+  --bg4: #1A1A48;
+  --a1:  #6C63FF;
+  --a2:  #2AABEE;
+  --ag:  linear-gradient(135deg, #6C63FF, #2AABEE);
+  --red:   #FF4D6D;
+  --green: #00C896;
+  --gold:  #FFD166;
+  --warn:  #FF9F1C;
+  --t0: #FFFFFF;
+  --t1: #BBBBDD;
+  --t2: #6666AA;
+  --t3: #33335A;
+  --br:  rgba(255,255,255,0.06);
+  --br2: rgba(255,255,255,0.11);
+  --r:  14px;
+  --r2: 20px;
+}
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+html, body { height:100%; background:var(--bg0); color:var(--t0); font-family:'Cairo',sans-serif; font-size:14px; }
+body { overflow-x:hidden; }
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar { width:4px; }
+::-webkit-scrollbar-track { background:transparent; }
+::-webkit-scrollbar-thumb { background:var(--t3); border-radius:4px; }
+
+/* ── BG GLOW ── */
+body::before {
+  content:''; position:fixed; inset:0; pointer-events:none; z-index:0;
+  background:
+    radial-gradient(ellipse 55% 35% at 15% 15%, rgba(108,99,255,.13), transparent),
+    radial-gradient(ellipse 45% 45% at 85% 85%, rgba(42,171,238,.10), transparent);
+}
+
+/* ── LAYOUT ── */
+.page { position:relative; z-index:1; max-width:960px; margin:0 auto; padding:32px 20px 60px; }
+
+/* ── HEADER ── */
+header { display:flex; align-items:center; gap:16px; margin-bottom:40px; }
+.logo-box {
+  width:56px; height:56px; border-radius:18px; background:var(--ag);
+  display:flex; align-items:center; justify-content:center; font-size:28px;
+  box-shadow:0 0 40px rgba(108,99,255,.45); flex-shrink:0;
+}
+.logo-text h1 { font-size:24px; font-weight:900; letter-spacing:-.4px; background:var(--ag); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+.logo-text p  { font-size:12px; color:var(--t2); margin-top:3px; }
+.hd-right { margin-right:auto; display:flex; align-items:center; gap:10px; }
+.health-dot { width:9px; height:9px; border-radius:50%; background:var(--t3); flex-shrink:0; transition:.3s; }
+.health-dot.ok { background:var(--green); box-shadow:0 0 8px var(--green); animation:pulse 2s infinite; }
+.health-dot.err { background:var(--red); }
+@keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:.5;} }
+.health-txt { font-size:12px; color:var(--t2); font-weight:600; }
+
+/* ── GRID ── */
+.grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+@media(max-width:680px) { .grid-2 { grid-template-columns:1fr; } }
+
+/* ── CARD ── */
+.card {
+  background:var(--bg1); border:1px solid var(--br); border-radius:var(--r2);
+  padding:24px; transition:.2s;
+}
+.card:hover { border-color:var(--br2); }
+.card-title {
+  font-size:14px; font-weight:800; color:var(--t1); margin-bottom:18px;
+  display:flex; align-items:center; gap:8px;
+}
+.card-title .ct-ico { font-size:18px; }
+
+/* ── FORM ELEMENTS ── */
+.fg { margin-bottom:14px; }
+.fg label { display:block; font-size:11px; color:var(--t2); font-weight:700; margin-bottom:6px; letter-spacing:.4px; text-transform:uppercase; }
+.fg input, .fg select, .fg textarea {
+  width:100%; padding:12px 14px; background:var(--bg2); border:1px solid var(--br);
+  border-radius:var(--r); color:var(--t0); font-family:'Cairo',sans-serif; font-size:13px;
+  outline:none; transition:.2s;
+}
+.fg input:focus, .fg select:focus { border-color:var(--a1); box-shadow:0 0 0 3px rgba(108,99,255,.15); }
+.fg input::placeholder { color:var(--t3); }
+.fg select option { background:var(--bg2); }
+
+.row-2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+@media(max-width:500px) { .row-2 { grid-template-columns:1fr; } }
+
+/* ── BUTTONS ── */
+.btn {
+  width:100%; padding:14px; border:none; border-radius:var(--r); cursor:pointer;
+  font-family:'Cairo',sans-serif; font-size:14px; font-weight:800; transition:all .2s; letter-spacing:.2px;
+}
+.btn-primary { background:var(--ag); color:#fff; box-shadow:0 8px 24px rgba(108,99,255,.35); }
+.btn-primary:hover { transform:translateY(-2px); box-shadow:0 12px 32px rgba(108,99,255,.5); }
+.btn-primary:disabled { opacity:.4; cursor:not-allowed; transform:none; box-shadow:none; }
+.btn-danger  { background:rgba(255,77,109,.12); color:var(--red); border:1px solid rgba(255,77,109,.25); }
+.btn-danger:hover { background:rgba(255,77,109,.22); }
+.btn-ghost   { background:var(--bg2); color:var(--t1); border:1px solid var(--br); }
+.btn-ghost:hover { border-color:var(--br2); color:var(--t0); }
+.btn-sm { padding:8px 14px; font-size:12px; width:auto; border-radius:10px; }
+
+/* ── STATUS BADGE ── */
+.badge {
+  display:inline-flex; align-items:center; gap:5px;
+  padding:4px 11px; border-radius:20px; font-size:11px; font-weight:800;
+}
+.badge-live    { background:rgba(0,200,150,.12); color:var(--green); border:1px solid rgba(0,200,150,.25); }
+.badge-start   { background:rgba(255,159,28,.12); color:var(--warn);  border:1px solid rgba(255,159,28,.25); }
+.badge-error   { background:rgba(255,77,109,.12);  color:var(--red);   border:1px solid rgba(255,77,109,.25); }
+.badge-off     { background:var(--bg3); color:var(--t2); border:1px solid var(--br); }
+.badge-dot     { width:6px; height:6px; border-radius:50%; background:currentColor; }
+.badge-live .badge-dot { animation:pulse 1.2s infinite; }
+
+/* ── STAT STRIP ── */
+.stats-strip { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:16px; }
+.stat-box { background:var(--bg2); border:1px solid var(--br); border-radius:var(--r); padding:14px 12px; text-align:center; }
+.stat-val { font-size:20px; font-weight:900; letter-spacing:-1px; margin-bottom:3px; }
+.stat-lbl { font-size:10px; color:var(--t2); font-weight:600; }
+.sv-green { color:var(--green); }
+.sv-blue  { color:var(--a2);   }
+.sv-gold  { color:var(--gold); }
+
+/* ── LOG BOX ── */
+.log-box {
+  background:var(--bg0); border:1px solid var(--br); border-radius:var(--r);
+  padding:12px 14px; height:180px; overflow-y:auto; font-family:monospace; font-size:11px;
+  color:var(--t1); line-height:1.8;
+}
+.log-box .log-line { border-bottom:1px solid rgba(255,255,255,.04); padding:1px 0; }
+.log-box .log-line:last-child { border:none; }
+.log-err  { color:var(--red) !important; }
+.log-info { color:var(--a2); }
+.log-ok   { color:var(--green); }
+.log-empty { color:var(--t3); font-family:'Cairo',sans-serif; text-align:center; padding-top:60px; font-size:13px; }
+
+/* ── ACTIVE SESSIONS ── */
+.session-card {
+  background:var(--bg2); border:1px solid var(--br); border-radius:var(--r2);
+  padding:16px 18px; display:flex; flex-direction:column; gap:12px; transition:.2s;
+}
+.session-card:hover { border-color:var(--br2); }
+.sc-top { display:flex; align-items:center; gap:10px; }
+.sc-name { font-size:14px; font-weight:800; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.sc-meta { display:flex; gap:14px; font-size:11px; color:var(--t2); flex-wrap:wrap; }
+.sc-meta span { display:flex; align-items:center; gap:4px; }
+.sc-actions { display:flex; gap:8px; }
+.sessions-list { display:flex; flex-direction:column; gap:10px; margin-top:14px; }
+.no-sessions { color:var(--t3); font-size:13px; text-align:center; padding:30px 0; }
+
+/* ── DIVIDER ── */
+.div { height:1px; background:var(--br); margin:20px 0; }
+
+/* ── TOAST ── */
+#toast {
+  position:fixed; bottom:28px; left:50%; transform:translateX(-50%) translateY(30px);
+  background:var(--bg2); border:1px solid var(--br2); border-radius:var(--r);
+  padding:12px 22px; font-size:13px; font-weight:700; opacity:0; transition:all .3s;
+  z-index:999; pointer-events:none; max-width:90vw; text-align:center;
+}
+#toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+#toast.ok  { border-color:rgba(0,200,150,.4); color:var(--green); }
+#toast.err { border-color:rgba(255,77,109,.4); color:var(--red);  }
+
+/* ── SECTION TITLE ── */
+.sec-title {
+  font-size:16px; font-weight:900; margin-bottom:16px; letter-spacing:-.3px;
+  display:flex; align-items:center; gap:10px;
+}
+.sec-title::before { content:''; display:block; width:4px; height:20px; background:var(--ag); border-radius:2px; }
+
+/* ── PROGRESS BAR ── */
+.pbar-wrap { height:4px; background:var(--bg3); border-radius:2px; overflow:hidden; margin-top:6px; }
+.pbar { height:100%; background:var(--ag); border-radius:2px; width:0; transition:width .5s; }
 </style>
 </head>
 <body>
+<div class="page">
 
-<div class="hdr">
-  <div class="brand">
-    <div class="brand-icon">
-      <svg viewBox="0 0 24 24"><path d="M21 3L3 10.53v.98l6.84 2.65L12.48 21h.98L21 3z"/></svg>
+  <!-- HEADER -->
+  <header>
+    <div class="logo-box">📡</div>
+    <div class="logo-text">
+      <h1>TelStream</h1>
+      <p>بث IPTV مباشر إلى Telegram وأي منصة RTMP</p>
     </div>
-    TelStream
-  </div>
-  <div class="badge" id="badge"><span class="dot"></span><span id="badgeTxt">غير نشط</span></div>
-</div>
+    <div class="hd-right">
+      <div class="health-dot" id="hdot"></div>
+      <span class="health-txt" id="htxt">جاري الاتصال...</span>
+    </div>
+  </header>
 
-<div class="main">
+  <!-- NEW STREAM FORM -->
+  <div class="sec-title">🚀 بدء بث جديد</div>
+  <div class="grid-2" style="margin-bottom:32px">
 
-  <!-- روابط جاهزة -->
-  <div class="card">
-    <div class="card-title">روابط IPTV جاهزة (اختياري)</div>
-    <div class="presets">
-      <div class="preset" onclick="setPreset(this,'https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8','MUX Test Stream')">
-        <div class="preset-icon"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
-        <div class="preset-info">
-          <div class="preset-name">MUX Test Stream</div>
-          <div class="preset-url">test-streams.mux.dev</div>
-        </div>
+    <!-- LEFT: inputs -->
+    <div class="card">
+      <div class="card-title"><span class="ct-ico">📺</span> مصدر البث</div>
+
+      <div class="fg">
+        <label>اسم البث</label>
+        <input type="text" id="s-name" placeholder="مثال: قناة السعودية" value="بث جديد"/>
       </div>
-      <div class="preset" onclick="setPreset(this,'https://cph-p2p-msl.akamaized.net/hls/live/2000341/test/master.m3u8','Akamai Test Live')">
-        <div class="preset-icon"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div>
-        <div class="preset-info">
-          <div class="preset-name">Akamai Test Live</div>
-          <div class="preset-url">akamaized.net</div>
-        </div>
+      <div class="fg">
+        <label>رابط IPTV / M3U8</label>
+        <input type="url" id="s-url" placeholder="http://server/stream.m3u8"/>
+      </div>
+      <div class="fg">
+        <label>جودة الترميز</label>
+        <select id="s-quality">
+          <option value="low">منخفضة — 800k (للإنترنت البطيء)</option>
+          <option value="medium" selected>متوسطة — 1500k (مُوصَى)</option>
+          <option value="high">عالية — 2500k</option>
+          <option value="ultra">فائقة — 4000k</option>
+        </select>
       </div>
     </div>
+
+    <!-- RIGHT: destination -->
+    <div class="card">
+      <div class="card-title"><span class="ct-ico">🎯</span> وجهة البث</div>
+
+      <div class="fg">
+        <label>المنصة</label>
+        <select id="s-platform" onchange="setPlatform(this.value)">
+          <option value="telegram">📱 Telegram (dc4)</option>
+          <option value="telegram_dc5">📱 Telegram (dc5)</option>
+          <option value="youtube">▶️ YouTube Live</option>
+          <option value="twitch">💜 Twitch</option>
+          <option value="custom">⚙️ خادم RTMP مخصص</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label>خادم RTMP</label>
+        <input type="url" id="s-rtmp" value="rtmp://dc4-1.rtmp.t.me/s"/>
+      </div>
+      <div class="fg">
+        <label>مفتاح البث (Stream Key)</label>
+        <input type="text" id="s-key" placeholder="الصقه من تطبيق Telegram أو YouTube"/>
+      </div>
+      <button class="btn btn-primary" id="start-btn" onclick="startStream()">▶ بدء البث</button>
+    </div>
+
   </div>
 
-  <!-- رابط IPTV مخصص -->
-  <div class="card">
-    <div class="card-title">رابط البث</div>
-    <div class="field">
-      <label>رابط IPTV (m3u8 / ts / rtsp)</label>
-      <input type="url" id="iptvUrl" placeholder="https://... أو rtsp://...">
-    </div>
-    <div class="tip">
-      ✅ يدعم: <strong>m3u8</strong> · <strong>RTSP</strong> · <strong>TS</strong> · <strong>MP4</strong><br>
-      يمكنك أخذ الرابط من تطبيق IPTV Pro أو أي مشغل
-    </div>
+  <!-- ACTIVE STREAMS -->
+  <div class="sec-title">📊 البثوث النشطة</div>
+  <div id="sessions-wrap">
+    <div class="no-sessions" id="no-sessions">⚡ لا توجد بثوث نشطة حالياً</div>
+    <div class="sessions-list" id="sessions-list"></div>
   </div>
 
-  <!-- إعدادات تيليجرام -->
-  <div class="card">
-    <div class="card-title">إعدادات تيليجرام</div>
-    <div class="field">
-      <label>سيرفر RTMP</label>
-      <input type="text" id="rtmpServer" value="rtmp://dc4-1.rtmp.t.me/s" placeholder="rtmp://dc4-1.rtmp.t.me/s">
-    </div>
-    <div class="field">
-      <label>مفتاح البث (Stream Key)</label>
-      <input type="password" id="streamKey" placeholder="من تيليجرام ← بث مباشر ← تطبيق خارجي">
-    </div>
-    <div class="tip">
-      في تيليجرام: افتح القناة ← <strong>بث مباشر</strong> ← <strong>تطبيق خارجي</strong> ← انسخ المفتاح
-    </div>
-  </div>
-
-  <!-- إحصائيات -->
-  <div class="card" id="statsCard" style="display:none">
-    <div class="card-title">إحصائيات البث</div>
-    <div class="stats">
-      <div class="stat"><div class="stat-v" id="sFps">--</div><div class="stat-l">FPS</div></div>
-      <div class="stat"><div class="stat-v" id="sBitrate">--</div><div class="stat-l">Kbps</div></div>
-      <div class="stat"><div class="stat-v" id="sTime">00:00</div><div class="stat-l">مدة البث</div></div>
-    </div>
-    <div class="log" id="logBox" style="margin-top:10px"><p class="info">جاري البث...</p></div>
+  <!-- LOG (for selected session) -->
+  <div style="margin-top:28px">
+    <div class="sec-title">🖥 سجل FFmpeg</div>
+    <div id="log-session-label" style="font-size:12px;color:var(--t2);margin-bottom:10px;font-weight:600">اضغط على أي بث لعرض سجله</div>
+    <div class="log-box" id="logbox"><div class="log-empty">اختر بثاً لعرض السجل</div></div>
   </div>
 
 </div>
 
-<div class="footer">
-  <button class="btn-go" id="btnGo" onclick="toggle()">
-    <svg viewBox="0 0 24 24"><path d="M21 3L3 10.53v.98l6.84 2.65L12.48 21h.98L21 3z"/></svg>
-    ابدأ البث إلى تيليجرام
-  </button>
-  <div class="timer" id="timerTxt"></div>
-</div>
+<!-- TOAST -->
+<div id="toast"></div>
 
 <script>
-const SERVER = window.location.origin;
-let active = false;
-let sessionId = null;
-let pollInterval = null;
+// ════════════════════════════════════════════════════════════════
+// CONFIG & STATE
+// ════════════════════════════════════════════════════════════════
+var API      = '';           // same origin
+var sessions = {};           // sessionId → { name, status, ... }
+var watchId  = null;         // session being watched in log
+var pollTimer = null;
 
-function setPreset(el, url, name) {
-  document.getElementById('iptvUrl').value = url;
-  document.querySelectorAll('.preset').forEach(p => p.classList.remove('sel'));
-  el.classList.add('sel');
-  log(`تم اختيار: ${name}`, 'info');
-}
+var RTMP_PRESETS = {
+  telegram:    'rtmp://dc4-1.rtmp.t.me/s',
+  telegram_dc5:'rtmp://dc5-1.rtmp.t.me/s',
+  youtube:     'rtmp://a.rtmp.youtube.com/live2',
+  twitch:      'rtmp://live.twitch.tv/app',
+  custom:      '',
+};
 
-function log(msg, cls='') {
-  const box = document.getElementById('logBox');
-  const p = document.createElement('p');
-  p.className = cls;
-  p.textContent = `› ${msg}`;
-  box.appendChild(p);
-  box.scrollTop = box.scrollHeight;
-}
+// ════════════════════════════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════════════════════════════
+window.addEventListener('DOMContentLoaded', function() {
+  checkHealth();
+  setInterval(checkHealth, 8000);
+  setInterval(pollSessions, 2500);
+  pollSessions();
+});
 
-function fmtTime(s) {
-  const h = Math.floor(s/3600), m = Math.floor((s%3600)/60), sec = s%60;
-  return h ? `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`
-           : `${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
-}
-
-async function toggle() {
-  active ? await stopStream() : await startStream();
-}
-
-async function startStream() {
-  const iptvUrl = document.getElementById('iptvUrl').value.trim();
-  const rtmpServer = document.getElementById('rtmpServer').value.trim();
-  const streamKey = document.getElementById('streamKey').value.trim();
-
-  if (!iptvUrl) return alert('أدخل رابط IPTV');
-  if (!streamKey) return alert('أدخل مفتاح البث');
-
-  sessionId = 'sess_' + Date.now();
-
+// ════════════════════════════════════════════════════════════════
+// HEALTH
+// ════════════════════════════════════════════════════════════════
+async function checkHealth() {
   try {
-    const r = await fetch(`${SERVER}/api/stream/start`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ iptvUrl, rtmpServer, streamKey, sessionId })
-    });
-    const d = await r.json();
-    if (!r.ok) throw new Error(d.error);
-
-    active = true;
-    document.getElementById('statsCard').style.display = 'block';
-    document.getElementById('logBox').innerHTML = '';
-    log('تم إرسال الأمر للسيرفر...', 'info');
-
-    const btn = document.getElementById('btnGo');
-    btn.className = 'btn-go stop';
-    btn.innerHTML = '<svg viewBox="0 0 24 24" style="fill:white;width:18px;height:18px"><rect x="6" y="6" width="12" height="12"/></svg> إيقاف البث';
-
-    const badge = document.getElementById('badge');
-    badge.className = 'badge live';
-    document.getElementById('badgeTxt').textContent = 'بث مباشر';
-
-    pollInterval = setInterval(pollStatus, 3000);
-
+    var r = await fetch(API + '/api/health');
+    var d = await r.json();
+    document.getElementById('hdot').className = 'health-dot ok';
+    document.getElementById('htxt').textContent = 'الخادم يعمل • ' + d.sessions + ' بث نشط';
   } catch(e) {
-    alert('خطأ: ' + e.message);
+    document.getElementById('hdot').className = 'health-dot err';
+    document.getElementById('htxt').textContent = 'الخادم غير متاح';
   }
 }
 
-async function stopStream() {
-  clearInterval(pollInterval);
-  try {
-    await fetch(`${SERVER}/api/stream/stop`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ sessionId })
-    });
-  } catch(_) {}
-
-  active = false;
-  document.getElementById('badge').className = 'badge';
-  document.getElementById('badgeTxt').textContent = 'غير نشط';
-  document.getElementById('timerTxt').textContent = '';
-
-  const btn = document.getElementById('btnGo');
-  btn.className = 'btn-go';
-  btn.innerHTML = '<svg viewBox="0 0 24 24" style="fill:white;width:18px;height:18px"><path d="M21 3L3 10.53v.98l6.84 2.65L12.48 21h.98L21 3z"/></svg> ابدأ البث إلى تيليجرام';
-  log('تم إيقاف البث', 'err');
+// ════════════════════════════════════════════════════════════════
+// PLATFORM PRESET
+// ════════════════════════════════════════════════════════════════
+function setPlatform(val) {
+  var url = RTMP_PRESETS[val] || '';
+  document.getElementById('s-rtmp').value = url;
+  document.getElementById('s-rtmp').readOnly = val !== 'custom';
 }
 
-async function pollStatus() {
-  if (!sessionId) return;
+// ════════════════════════════════════════════════════════════════
+// START STREAM
+// ════════════════════════════════════════════════════════════════
+async function startStream() {
+  var url  = document.getElementById('s-url').value.trim();
+  var key  = document.getElementById('s-key').value.trim();
+  var rtmp = document.getElementById('s-rtmp').value.trim();
+  var name = document.getElementById('s-name').value.trim() || 'بث جديد';
+  var q    = document.getElementById('s-quality').value;
+
+  if (!url)  return toast('أدخل رابط IPTV', 'err');
+  if (!key)  return toast('أدخل مفتاح البث', 'err');
+  if (!rtmp) return toast('حدد وجهة البث', 'err');
+
+  document.getElementById('start-btn').disabled = true;
+  document.getElementById('start-btn').textContent = '⏳ جاري البدء...';
+
   try {
-    const r = await fetch(`${SERVER}/api/stream/status/${sessionId}`);
-    const d = await r.json();
-    if (!d.active) { if (active) stopStream(); return; }
+    var r = await fetch(API + '/api/stream/start', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ iptvUrl:url, rtmpServer:rtmp, streamKey:key, name, quality:q })
+    });
+    var d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'فشل');
 
-    document.getElementById('sFps').textContent = d.fps || '--';
-    document.getElementById('sBitrate').textContent =
-      d.bitrate ? d.bitrate.replace('kbits/s','').trim() : '--';
-    document.getElementById('sTime').textContent = fmtTime(d.elapsed || 0);
-    document.getElementById('timerTxt').textContent = `⏱ ${fmtTime(d.elapsed || 0)}`;
+    toast('✅ بدأ البث بنجاح — ' + name, 'ok');
+    sessions[d.sessionId] = { name, status:'starting', logs:[] };
+    watchId = d.sessionId;
+    await pollSessions();
 
-    if (d.logs && d.logs.length) {
-      const last = d.logs[d.logs.length - 1];
-      if (last.includes('fps=')) log('✅ البث يعمل بنجاح', 'ok');
+  } catch(e) {
+    toast('❌ ' + e.message, 'err');
+  } finally {
+    document.getElementById('start-btn').disabled = false;
+    document.getElementById('start-btn').textContent = '▶ بدء البث';
+  }
+}
+
+// ════════════════════════════════════════════════════════════════
+// STOP STREAM
+// ════════════════════════════════════════════════════════════════
+async function stopStream(sid) {
+  try {
+    await fetch(API + '/api/stream/stop', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ sessionId: sid })
+    });
+    delete sessions[sid];
+    if (watchId === sid) { watchId = null; resetLog(); }
+    toast('⏹ تم إيقاف البث', 'ok');
+    await pollSessions();
+  } catch(e) {
+    toast('❌ فشل الإيقاف: ' + e.message, 'err');
+  }
+}
+
+// ════════════════════════════════════════════════════════════════
+// POLL ALL SESSIONS
+// ════════════════════════════════════════════════════════════════
+async function pollSessions() {
+  try {
+    var r = await fetch(API + '/api/streams');
+    var d = await r.json();
+    var list = d.streams || [];
+
+    // Update local cache
+    var newSessions = {};
+    list.forEach(function(s) { newSessions[s.sessionId] = s; });
+    sessions = newSessions;
+
+    renderSessions(list);
+
+    // Poll watched session log
+    if (watchId && sessions[watchId]) {
+      await pollLog(watchId);
+    } else if (watchId && !sessions[watchId]) {
+      watchId = null;
+      resetLog();
     }
-  } catch(_) {}
+  } catch(e) {}
+}
+
+// ════════════════════════════════════════════════════════════════
+// RENDER SESSIONS
+// ════════════════════════════════════════════════════════════════
+function renderSessions(list) {
+  var noEl   = document.getElementById('no-sessions');
+  var listEl = document.getElementById('sessions-list');
+
+  if (!list.length) {
+    noEl.style.display   = 'block';
+    listEl.innerHTML     = '';
+    return;
+  }
+  noEl.style.display = 'none';
+
+  listEl.innerHTML = list.map(function(s) {
+    var badge = badgeHTML(s.status);
+    var elapsed = fmtElapsed(s.elapsed);
+    var active = watchId === s.sessionId;
+    return [
+      '<div class="session-card" style="'+(active?'border-color:var(--a1);':'')+'">',
+        '<div class="sc-top">',
+          '<div class="sc-name">'+esc(s.name)+'</div>',
+          badge,
+        '</div>',
+        '<div class="sc-meta">',
+          '<span>⏱ '+elapsed+'</span>',
+          '<span>🎞 '+s.fps+' fps</span>',
+          '<span>📶 '+s.bitrate+'</span>',
+          '<span style="color:var(--t3);font-size:10px">'+esc(s.iptvUrl.slice(0,40))+'…</span>',
+        '</div>',
+        '<div class="sc-actions">',
+          '<button class="btn btn-ghost btn-sm" onclick="watchSession(\''+s.sessionId+'\')">',
+            active ? '👁 يُعرض' : '📋 السجل',
+          '</button>',
+          '<button class="btn btn-danger btn-sm" onclick="stopStream(\''+s.sessionId+'\')">⏹ إيقاف</button>',
+        '</div>',
+      '</div>',
+    ].join('');
+  }).join('');
+}
+
+function badgeHTML(status) {
+  switch(status) {
+    case 'live':     return '<span class="badge badge-live"><span class="badge-dot"></span>مباشر</span>';
+    case 'starting': return '<span class="badge badge-start"><span class="badge-dot"></span>جاري البدء</span>';
+    case 'error':    return '<span class="badge badge-error"><span class="badge-dot"></span>خطأ</span>';
+    default:         return '<span class="badge badge-off"><span class="badge-dot"></span>متوقف</span>';
+  }
+}
+
+// ════════════════════════════════════════════════════════════════
+// WATCH SESSION LOG
+// ════════════════════════════════════════════════════════════════
+function watchSession(sid) {
+  watchId = sid;
+  document.getElementById('log-session-label').textContent =
+    'السجل: ' + (sessions[sid] ? sessions[sid].name : sid);
+  pollLog(sid);
+}
+
+async function pollLog(sid) {
+  try {
+    var r = await fetch(API + '/api/stream/status/' + sid);
+    var d = await r.json();
+    if (!d.active) { resetLog(); return; }
+
+    var box = document.getElementById('logbox');
+    if (!d.logs || !d.logs.length) {
+      box.innerHTML = '<div class="log-empty">في انتظار FFmpeg…</div>';
+      return;
+    }
+
+    var atBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 60;
+    box.innerHTML = d.logs.map(function(line) {
+      var cls = /error|failed|invalid/i.test(line) ? 'log-err' :
+                /fps=|bitrate=/i.test(line) ? 'log-ok' : '';
+      return '<div class="log-line '+ cls +'">' + esc(line) + '</div>';
+    }).join('');
+    if (atBottom) box.scrollTop = box.scrollHeight;
+  } catch(e) {}
+}
+
+function resetLog() {
+  document.getElementById('logbox').innerHTML = '<div class="log-empty">اختر بثاً لعرض السجل</div>';
+  document.getElementById('log-session-label').textContent = 'اضغط على أي بث لعرض سجله';
+}
+
+// ════════════════════════════════════════════════════════════════
+// UTILS
+// ════════════════════════════════════════════════════════════════
+function fmtElapsed(s) {
+  var h = String(Math.floor(s/3600)).padStart(2,'0');
+  var m = String(Math.floor((s%3600)/60)).padStart(2,'0');
+  var sec = String(s%60).padStart(2,'0');
+  return h+':'+m+':'+sec;
+}
+
+var toastT = null;
+function toast(msg, type) {
+  var el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'show ' + (type||'');
+  clearTimeout(toastT);
+  toastT = setTimeout(function() { el.className = ''; }, 3500);
+}
+
+function esc(s) {
+  return String(s||'').replace(/[&<>"']/g, function(c) {
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+  });
 }
 </script>
 </body>
