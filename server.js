@@ -8,7 +8,6 @@ app.use(express.json());
 
 const sessions = new Map();
 
-// ===== HTML =====
 const HTML = `<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -37,8 +36,8 @@ body{background:var(--bg);color:var(--txt);font-family:var(--font);min-height:10
 .field{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
 .field:last-child{margin-bottom:0}
 .field label{font-size:12px;color:var(--dim)}
-.field input,.field select{background:var(--s2);border:1px solid var(--bd);border-radius:9px;padding:11px 13px;color:var(--txt);font-family:var(--font);font-size:14px;outline:none;transition:border-color .2s;direction:ltr;text-align:right;width:100%;-webkit-appearance:none}
-.field input:focus,.field select:focus{border-color:var(--acc)}
+.field input{background:var(--s2);border:1px solid var(--bd);border-radius:9px;padding:11px 13px;color:var(--txt);font-family:var(--font);font-size:14px;outline:none;transition:border-color .2s;direction:ltr;text-align:right;width:100%}
+.field input:focus{border-color:var(--acc)}
 .field input::placeholder{color:var(--dim);opacity:.5}
 .tip{font-size:11.5px;color:var(--dim);background:rgba(42,171,238,.06);border:1px solid rgba(42,171,238,.15);border-radius:9px;padding:10px 12px;line-height:1.7}
 .tip strong{color:var(--acc);font-weight:500}
@@ -94,10 +93,12 @@ body{background:var(--bg);color:var(--txt);font-family:var(--font);min-height:10
   <div class="card">
     <div class="card-title">رابط البث</div>
     <div class="field">
-      <label>رابط IPTV (m3u8 / rtsp / ts)</label>
-      <input type="url" id="iptvUrl" placeholder="https://... او rtsp://...">
+      <label>رابط IPTV</label>
+      <input type="url" id="iptvUrl" placeholder="http://... او https://... او rtsp://...">
     </div>
-    <div class="tip">يدعم: <strong>m3u8 HLS</strong> · <strong>RTSP</strong> · <strong>TS</strong> · <strong>MP4</strong></div>
+    <div class="tip">
+      يدعم: <strong>Xtream Codes</strong> · <strong>m3u8 HLS</strong> · <strong>RTSP</strong> · <strong>TS</strong> · <strong>MP4</strong>
+    </div>
   </div>
 
   <div class="card">
@@ -145,32 +146,11 @@ body{background:var(--bg);color:var(--txt);font-family:var(--font);min-height:10
 const SERVER=window.location.origin;
 let active=false,sessionId=null,pollInterval=null;
 let qW='854',qH='480',qB='1000k';
-
-function setPreset(el,url){
-  document.getElementById('iptvUrl').value=url;
-  document.querySelectorAll('.preset').forEach(p=>p.classList.remove('sel'));
-  el.classList.add('sel');
-}
-function setQ(el,w,h,b){
-  qW=w;qH=h;qB=b;
-  document.querySelectorAll('.qbtn').forEach(x=>x.classList.remove('sel'));
-  el.classList.add('sel');
-}
-function log(msg,cls){
-  const box=document.getElementById('logBox');
-  const p=document.createElement('p');
-  p.className=cls||'';
-  p.textContent='> '+msg;
-  box.appendChild(p);
-  box.scrollTop=box.scrollHeight;
-  if(box.children.length>40)box.removeChild(box.children[0]);
-}
-function fmtTime(s){
-  const h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60;
-  return h?[h,m,sec].map(x=>String(x).padStart(2,'0')).join(':'):[m,sec].map(x=>String(x).padStart(2,'0')).join(':');
-}
+function setPreset(el,url){document.getElementById('iptvUrl').value=url;document.querySelectorAll('.preset').forEach(p=>p.classList.remove('sel'));el.classList.add('sel');}
+function setQ(el,w,h,b){qW=w;qH=h;qB=b;document.querySelectorAll('.qbtn').forEach(x=>x.classList.remove('sel'));el.classList.add('sel');}
+function log(msg,cls){const box=document.getElementById('logBox');const p=document.createElement('p');p.className=cls||'';p.textContent='> '+msg;box.appendChild(p);box.scrollTop=box.scrollHeight;if(box.children.length>40)box.removeChild(box.children[0]);}
+function fmtTime(s){const h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60;return h?[h,m,sec].map(x=>String(x).padStart(2,'0')).join(':'):[m,sec].map(x=>String(x).padStart(2,'0')).join(':');}
 async function toggle(){active?await stopStream():await startStream();}
-
 async function startStream(){
   const iptvUrl=document.getElementById('iptvUrl').value.trim();
   const rtmpServer=document.getElementById('rtmpServer').value.trim();
@@ -179,56 +159,38 @@ async function startStream(){
   if(!streamKey)return alert('ادخل مفتاح البث');
   sessionId='sess_'+Date.now();
   try{
-    const r=await fetch(SERVER+'/api/stream/start',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({iptvUrl,rtmpServer,streamKey,sessionId,width:qW,height:qH,bitrate:qB})
-    });
+    const r=await fetch(SERVER+'/api/stream/start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({iptvUrl,rtmpServer,streamKey,sessionId,width:qW,height:qH,bitrate:qB})});
     const d=await r.json();
     if(!r.ok)throw new Error(d.error);
     active=true;
     document.getElementById('statsCard').style.display='block';
     document.getElementById('logBox').innerHTML='';
     log('تم ارسال الامر للسيرفر...','info');
-    const btn=document.getElementById('btnGo');
-    btn.className='btn-go stop';
-    btn.innerHTML='<svg viewBox="0 0 24 24" style="fill:white;width:18px;height:18px"><rect x="6" y="6" width="12" height="12"/></svg> ايقاف البث';
+    document.getElementById('btnGo').className='btn-go stop';
+    document.getElementById('btnGo').innerHTML='<svg viewBox="0 0 24 24" style="fill:white;width:18px;height:18px"><rect x="6" y="6" width="12" height="12"/></svg> ايقاف البث';
     document.getElementById('badge').className='badge live';
     document.getElementById('badgeTxt').textContent='بث مباشر';
     pollInterval=setInterval(pollStatus,3000);
   }catch(e){alert('خطأ: '+e.message);}
 }
-
 async function stopStream(){
   clearInterval(pollInterval);
-  try{
-    await fetch(SERVER+'/api/stream/stop',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({sessionId})
-    });
-  }catch(_){}
+  try{await fetch(SERVER+'/api/stream/stop',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sessionId})});}catch(_){}
   active=false;
   document.getElementById('badge').className='badge';
   document.getElementById('badgeTxt').textContent='غير نشط';
   document.getElementById('timerTxt').textContent='';
-  const btn=document.getElementById('btnGo');
-  btn.className='btn-go';
-  btn.innerHTML='<svg viewBox="0 0 24 24" style="fill:white;width:18px;height:18px"><path d="M21 3L3 10.53v.98l6.84 2.65L12.48 21h.98L21 3z"/></svg> ابدأ البث الى تيليجرام';
+  document.getElementById('btnGo').className='btn-go';
+  document.getElementById('btnGo').innerHTML='<svg viewBox="0 0 24 24" style="fill:white;width:18px;height:18px"><path d="M21 3L3 10.53v.98l6.84 2.65L12.48 21h.98L21 3z"/></svg> ابدأ البث الى تيليجرام';
   log('تم ايقاف البث','err');
 }
-
 async function pollStatus(){
   if(!sessionId)return;
   try{
     const r=await fetch(SERVER+'/api/stream/status/'+sessionId);
     const d=await r.json();
     if(!d.active){
-      if(active){
-        document.getElementById('badge').className='badge reconnect';
-        document.getElementById('badgeTxt').textContent='اعادة اتصال...';
-        log('السيرفر يعيد الاتصال تلقائياً...','warn');
-      }
+      if(active){document.getElementById('badge').className='badge reconnect';document.getElementById('badgeTxt').textContent='اعادة اتصال...';}
       return;
     }
     document.getElementById('badge').className='badge live';
@@ -237,7 +199,7 @@ async function pollStatus(){
     document.getElementById('sBitrate').textContent=d.bitrate?d.bitrate.replace('kbits/s','').trim():'--';
     document.getElementById('sTime').textContent=fmtTime(d.elapsed||0);
     document.getElementById('timerTxt').textContent='مدة البث: '+fmtTime(d.elapsed||0);
-    if(d.hasVideo)log('الفيديو يعمل بنجاح','ok');
+    if(d.hasVideo)log('الفيديو يعمل','ok');
   }catch(_){}
 }
 </script>
@@ -246,96 +208,124 @@ async function pollStatus(){
 
 app.get("/", (req, res) => res.send(HTML));
 
-// ===== دالة تشغيل FFmpeg مع إعادة المحاولة =====
+// ===== كشف نوع الرابط =====
+function detectFormat(url) {
+  if (url.includes(".m3u8"))        return { fmt: "hls",    isHls: true  };
+  if (url.includes(".ts"))          return { fmt: "mpegts", isMpegts: true };
+  if (url.startsWith("rtsp://"))    return { fmt: "rtsp",   isRtsp: true };
+  if (url.startsWith("rtmp://"))    return { fmt: "rtmp",   isRtmp: true };
+  if (url.includes(".mp4"))         return { fmt: "mp4"  };
+  // Xtream Codes — أرقام في المسار بدون امتداد
+  if (/\/\d+\/\d+\/\d+$/.test(url)) return { fmt: "mpegts", isXtream: true };
+  // أي رابط HTTP آخر بدون امتداد
+  return { fmt: "mpegts", isUnknown: true };
+}
+
+// ===== تشغيل FFmpeg مع إعادة المحاولة =====
 function startFFmpeg(session, iptvUrl, rtmp, width, height, bitrate) {
+  const { fmt, isHls, isRtsp, isRtmp, isXtream, isUnknown } = detectFormat(iptvUrl);
+
+  console.log(`🔍 نوع الرابط: ${fmt} | ${iptvUrl}`);
+
+  const inputArgs = [];
+
+  // User-Agent لتجاوز الحماية في Xtream وغيرها
+  if (!isRtsp && !isRtmp) {
+    inputArgs.push("-user_agent", "VLC/3.0.18 LibVLC/3.0.18");
+  }
+
+  // إعادة الاتصال للبث المباشر
+  if (!isRtsp) {
+    inputArgs.push(
+      "-reconnect",         "1",
+      "-reconnect_streamed","1",
+      "-reconnect_delay_max","5"
+    );
+  }
+
+  // وقت تحليل أطول للروابط المجهولة
+  inputArgs.push(
+    "-analyzeduration", "20000000",
+    "-probesize",       "20000000"
+  );
+
+  // إجبار نوع الإدخال لـ Xtream والروابط بدون امتداد
+  if (isXtream || isUnknown || fmt === "mpegts") {
+    inputArgs.push("-f", "mpegts");
+  }
+
+  inputArgs.push("-i", iptvUrl);
+
   const args = [
-    // خيارات الشبكة والاتصال
-    "-reconnect", "1",
-    "-reconnect_streamed", "1",
-    "-reconnect_delay_max", "5",
-    "-timeout", "10000000",        // 10 ثانية timeout
-    "-analyzeduration", "10000000",
-    "-probesize", "10000000",
+    ...inputArgs,
 
-    // المصدر
-    "-i", iptvUrl,
+    // إصلاح التواريخ المكسورة — ضروري لـ IPTV
+    "-fflags",       "+genpts+igndts",
+    "-err_detect",   "ignore_err",
 
-    // إصلاح التواريخ المكسورة
-    "-fflags", "+genpts+igndts",
+    // أخذ أول تراك فيديو وصوت
+    "-map", "0:v:0",
+    "-map", "0:a:0",
 
-    // فيديو — إعادة ترميز كاملة لضمان التوافق
-    "-map", "0:v:0",               // تأكد من أخذ الفيديو
-    "-map", "0:a:0",               // تأكد من أخذ الصوت
-    "-c:v", "libx264",
-    "-preset", "veryfast",
-    "-tune", "zerolatency",
-    "-b:v", bitrate || "2500k",
-    "-maxrate", bitrate || "2500k",
-    "-bufsize", "6000k",
-    "-vf", `scale=${width||1280}:${height||720}:force_original_aspect_ratio=decrease,pad=${width||1280}:${height||720}:(ow-iw)/2:(oh-ih)/2`,
-    "-g", "60",                    // keyframe كل 2 ثانية عند 30fps
-    "-keyint_min", "60",
-    "-sc_threshold", "0",
+    // فيديو — إعادة ترميز كاملة
+    "-c:v",      "libx264",
+    "-preset",   "veryfast",
+    "-tune",     "zerolatency",
+    "-b:v",      bitrate || "2500k",
+    "-maxrate",  bitrate || "2500k",
+    "-bufsize",  "6000k",
+    "-vf",       `scale=${width||1280}:${height||720}:force_original_aspect_ratio=decrease,pad=${width||1280}:${height||720}:(ow-iw)/2:(oh-ih)/2`,
+    "-g",        "60",
+    "-keyint_min","60",
+    "-sc_threshold","0",
+    "-pix_fmt",  "yuv420p",        // ضروري لـ Telegram
 
     // صوت
-    "-c:a", "aac",
-    "-b:a", "128k",
-    "-ar", "44100",
-    "-ac", "2",                    // stereo دائماً
+    "-c:a",  "aac",
+    "-b:a",  "128k",
+    "-ar",   "44100",
+    "-ac",   "2",
 
-    // الإخراج
-    "-f", "flv",
-    "-flvflags", "no_duration_filesize",
+    // إخراج RTMP
+    "-f",         "flv",
+    "-flvflags",  "no_duration_filesize",
     rtmp
   ];
 
-  console.log("🚀 FFmpeg يبدأ:", iptvUrl, "→", rtmp);
+  console.log("🚀 FFmpeg يبدأ:", args.join(" ").slice(0, 200));
   const ff = spawn("ffmpeg", args);
   session.ff = ff;
-  session.retries = (session.retries || 0);
 
   ff.stderr.on("data", d => {
     const line = d.toString().trim();
-
-    // استخراج FPS والـ bitrate
     const m = line.match(/fps=\s*(\S+).*bitrate=\s*(\S+)/);
-    if (m) {
-      session.fps = m[1];
-      session.bitrate = m[2];
-      session.hasVideo = true;
+    if (m) { session.fps = m[1]; session.bitrate = m[2]; session.hasVideo = true; }
+    if (line.includes("Error") || line.includes("Invalid") || line.includes("error")) {
+      console.error("⚠️", line.slice(0, 150));
     }
-
-    // تحذيرات مهمة
-    if (line.includes("No such file") || line.includes("Connection refused")) {
-      console.error("❌ خطأ في الرابط:", line);
-    }
-
     session.logs.push(line.slice(0, 150));
     if (session.logs.length > 50) session.logs.shift();
   });
 
-  ff.on("close", (code) => {
-    console.log(`FFmpeg انتهى (كود ${code}), محاولات: ${session.retries}`);
+  ff.on("close", code => {
+    console.log(`FFmpeg انتهى (كود ${code}) | محاولة ${session.retries}`);
     session.hasVideo = false;
 
-    // إعادة المحاولة تلقائياً إذا الجلسة لا تزال نشطة
     if (session.active && session.retries < 10) {
       session.retries++;
       const delay = Math.min(session.retries * 3, 15) * 1000;
       console.log(`🔄 إعادة المحاولة ${session.retries} بعد ${delay/1000}s`);
-      session.logs.push(`[إعادة محاولة ${session.retries} بعد ${delay/1000} ثانية]`);
+      session.logs.push(`--- اعادة محاولة ${session.retries} بعد ${delay/1000}s ---`);
       setTimeout(() => {
-        if (session.active) {
-          startFFmpeg(session, iptvUrl, rtmp, width, height, bitrate);
-        }
+        if (session.active) startFFmpeg(session, iptvUrl, rtmp, width, height, bitrate);
       }, delay);
     } else if (session.retries >= 10) {
-      console.log("❌ تجاوز الحد الأقصى للمحاولات");
       session.active = false;
+      session.logs.push("--- فشل البث بعد 10 محاولات ---");
     }
   });
 
-  ff.on("error", (err) => {
+  ff.on("error", err => {
     console.error("FFmpeg خطأ:", err.message);
     session.logs.push("[خطأ: " + err.message + "]");
   });
@@ -344,23 +334,16 @@ function startFFmpeg(session, iptvUrl, rtmp, width, height, bitrate) {
 // ===== API =====
 app.post("/api/stream/start", (req, res) => {
   const { iptvUrl, rtmpServer, streamKey, sessionId, width, height, bitrate } = req.body;
-
   if (!iptvUrl || !streamKey)
     return res.status(400).json({ error: "iptvUrl و streamKey مطلوبان" });
   if (sessions.has(sessionId))
     return res.status(400).json({ error: "جلسة نشطة بالفعل" });
 
   const rtmp = `${rtmpServer || "rtmp://dc4-1.rtmp.t.me/s"}/${streamKey}`;
-
   const session = {
-    logs: [],
-    startTime: Date.now(),
-    fps: "--",
-    bitrate: "--",
-    hasVideo: false,
-    active: true,
-    retries: 0,
-    ff: null
+    logs: [], startTime: Date.now(),
+    fps: "--", bitrate: "--",
+    hasVideo: false, active: true, retries: 0, ff: null
   };
 
   sessions.set(sessionId, session);
@@ -371,8 +354,7 @@ app.post("/api/stream/start", (req, res) => {
 app.post("/api/stream/stop", (req, res) => {
   const s = sessions.get(req.body.sessionId);
   if (!s) return res.status(404).json({ error: "غير موجود" });
-
-  s.active = false;  // يوقف إعادة المحاولات
+  s.active = false;
   if (s.ff) s.ff.kill("SIGTERM");
   sessions.delete(req.body.sessionId);
   console.log("⏹️ تم الإيقاف");
@@ -384,12 +366,12 @@ app.get("/api/stream/status/:id", (req, res) => {
   if (!s || !s.active) return res.json({ active: false });
   res.json({
     active: true,
-    elapsed: Math.floor((Date.now() - s.startTime) / 1000),
-    fps: s.fps,
-    bitrate: s.bitrate,
+    elapsed:  Math.floor((Date.now() - s.startTime) / 1000),
+    fps:      s.fps,
+    bitrate:  s.bitrate,
     hasVideo: s.hasVideo,
-    retries: s.retries,
-    logs: s.logs.slice(-5)
+    retries:  s.retries,
+    logs:     s.logs.slice(-5)
   });
 });
 
