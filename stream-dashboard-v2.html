@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StreamControl — IPTV Multi-Source</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/hls.js@latest/dist/hls.min.js"></script>
+<style>
+:root{
+  --bg:#090b10;--bg2:#0f1117;--bg3:#141720;--surface:#1a1e28;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.13);
+  --text:#e6e8f0;--text2:#8b90a4;--text3:#4a4f60;
+  --red:#ff3547;--red-dim:rgba(255,53,71,0.14);--red-glow:rgba(255,53,71,0.3);
+  --green:#00d97e;--green-dim:rgba(0,217,126,0.1);
+  --amber:#ffb627;--amber-dim:rgba(255,182,39,0.1);
+  --blue:#4d8af8;--blue-dim:rgba(77,138,248,0.12);
+  --tg:#2AABEE;--tw:#1DA1F2;--tt:#ff0050;--ig:#E1306C;
+  --r:12px;--rs:8px;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'IBM Plex Sans Arabic',sans-serif;overflow-x:hidden;}
+::-webkit-scrollbar{width:3px;height:3px;}
+::-webkit-scrollbar-thumb{background:var(--surface);border-radius:3px;}
+
+header{display:flex;align-items:center;justify-content:space-between;padding:13px 24px;background:var(--bg2);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:200;}
+.logo{display:flex;align-items:center;gap:10px;}
+.logo-pulse{width:9px;height:9px;border-radius:50%;background:var(--text3);transition:all .3s;}
+.logo-pulse.live{background:var(--red);box-shadow:0 0 12px var(--red-glow);animation:blink 1.1s infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.35}}
+.logo-name{font-size:16px;font-weight:700;letter-spacing:-.3px;}
+.on-air{font-size:10px;font-weight:700;letter-spacing:1.5px;background:var(--red);color:#fff;padding:2px 9px;border-radius:4px;display:none;}
+.on-air.v{display:block;}
+.h-right{display:flex;align-items:center;gap:14px;}
+.h-timer{font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:600;color:var(--red);letter-spacing:2px;display:none;}
+.h-timer.v{display:block;}
+.h-pill{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--text2);background:var(--bg3);padding:6px 13px;border-radius:20px;border:1px solid var(--border);}
+.h-dot{width:6px;height:6px;border-radius:50%;background:var(--text3);transition:all .3s;}
+.h-dot.live{background:var(--red);}
+.h-dot.ready{background:var(--green);}
+
+.layout{display:grid;grid-template-columns:1fr 375px;height:calc(100vh - 54px);overflow:hidden;}
+.left{padding:22px 24px;overflow-y:auto;display:flex;flex-direction:column;gap:18px;}
+.right{border-right:1px solid var(--border);background:var(--bg2);display:flex;flex-direction:column;overflow-y:auto;}
+
+.slabel{font-size:10px;font-weight:700;letter-spacing:1.5px;color:var(--text3);text-transform:uppercase;margin-bottom:10px;}
+
+/* PREVIEW */
+.prev-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;}
+.prev-header{display:flex;align-items:center;justify-content:space-between;padding:13px 18px;border-bottom:1px solid var(--border);}
+.prev-title{font-size:13px;font-weight:600;color:var(--text2);}
+.src-badge{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text3);}
+.src-dot{width:6px;height:6px;border-radius:50%;background:var(--text3);transition:all .3s;}
+.src-dot.on{background:var(--green);}
+.video-box{aspect-ratio:16/9;background:#03040a;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;}
+#mainVideo{width:100%;height:100%;object-fit:contain;display:block;}
+.video-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px;background:rgba(3,4,10,.9);}
+.video-overlay.hidden{display:none;}
+.play-icon{width:52px;height:52px;border-radius:50%;border:2px solid var(--border2);display:flex;align-items:center;justify-content:center;color:var(--text3);font-size:20px;}
+.ov-text{font-size:12px;color:var(--text3);}
+.vid-badge{position:absolute;top:12px;right:12px;background:var(--red);color:#fff;font-size:10px;font-weight:700;letter-spacing:1px;padding:3px 9px;border-radius:4px;display:none;}
+.vid-badge.v{display:block;animation:blink 1.1s infinite;}
+.src-info{position:absolute;bottom:12px;right:12px;background:rgba(9,11,16,.8);border:1px solid var(--border);border-radius:6px;padding:5px 10px;font-size:10px;color:var(--text2);font-family:'JetBrains Mono',monospace;direction:ltr;max-width:70%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:none;}
+.src-info.v{display:block;}
+.prev-footer{display:flex;align-items:center;justify-content:space-between;padding:11px 18px;}
+.pf-stat{font-size:12px;color:var(--text3);}
+.pf-stat span{color:var(--text2);font-weight:600;}
+.pf-btns{display:flex;gap:6px;}
+.pf-btn{background:var(--surface);border:1px solid var(--border2);border-radius:6px;color:var(--text2);font-size:12px;font-family:inherit;padding:6px 13px;cursor:pointer;transition:all .2s;}
+.pf-btn:hover{color:var(--text);background:var(--bg2);}
+.pf-btn.danger:hover{color:var(--red);border-color:rgba(255,53,71,.3);}
+
+/* SOURCES */
+.sources-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;}
+.sc-head{display:flex;align-items:center;justify-content:space-between;padding:13px 18px;border-bottom:1px solid var(--border);}
+.sc-title{font-size:13px;font-weight:600;color:var(--text2);}
+.add-btn{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--blue);background:var(--blue-dim);border:1px solid rgba(77,138,248,.25);padding:5px 12px;border-radius:6px;cursor:pointer;font-family:inherit;font-weight:600;transition:all .2s;}
+.add-btn:hover{background:rgba(77,138,248,.2);}
+.url-list{padding:12px 16px;display:flex;flex-direction:column;gap:7px;}
+.url-row{display:flex;align-items:center;gap:8px;background:var(--bg2);border:1px solid var(--border);border-radius:var(--rs);padding:9px 12px;transition:border-color .2s;position:relative;}
+.url-row.act{border-color:rgba(0,217,126,.35);background:rgba(0,217,126,.03);}
+.url-row.err{border-color:rgba(255,53,71,.3);background:rgba(255,53,71,.03);}
+.url-row.trying{border-color:rgba(255,182,39,.35);}
+.url-rank{width:20px;height:20px;border-radius:50%;background:var(--surface);color:var(--text3);font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.udot{width:7px;height:7px;border-radius:50%;background:var(--text3);flex-shrink:0;transition:all .3s;}
+.udot.ok{background:var(--green);}
+.udot.er{background:var(--red);}
+.udot.tr{background:var(--amber);animation:blink .8s infinite;}
+.ulbl{width:80px;background:transparent;border:none;border-left:1px solid var(--border);outline:none;color:var(--text2);font-size:11px;font-family:inherit;padding:0;padding-left:10px;flex-shrink:0;}
+.ulbl::placeholder{color:var(--text3);}
+.uurl{flex:1;background:transparent;border:none;outline:none;color:var(--text);font-size:11px;font-family:'JetBrains Mono',monospace;direction:ltr;text-align:left;min-width:0;}
+.uurl::placeholder{color:var(--text3);}
+.uacts{display:flex;align-items:center;gap:4px;flex-shrink:0;}
+.uact{width:25px;height:25px;border-radius:5px;border:1px solid var(--border);background:transparent;color:var(--text3);cursor:pointer;font-size:11px;display:flex;align-items:center;justify-content:center;transition:all .2s;font-family:inherit;}
+.uact:hover{background:var(--surface);color:var(--text);}
+.uact.del:hover{background:var(--red-dim);border-color:rgba(255,53,71,.3);color:var(--red);}
+.uact.play:hover{background:var(--green-dim);border-color:rgba(0,217,126,.3);color:var(--green);}
+.act-lbl{position:absolute;top:-1px;right:-1px;background:var(--green);color:#0a0a0a;font-size:8px;font-weight:800;letter-spacing:.8px;padding:2px 7px;border-radius:0 6px 0 6px;}
+.fo-bar{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-top:1px solid var(--border);background:rgba(255,182,39,.03);}
+.fo-txt{font-size:12px;color:var(--amber);}
+.mt{position:relative;}
+.mt input{opacity:0;width:0;height:0;position:absolute;}
+.mt-l{display:block;width:32px;height:17px;background:var(--surface);border-radius:17px;cursor:pointer;position:relative;transition:background .25s;}
+.mt-l::after{content:'';position:absolute;top:2px;right:2px;width:13px;height:13px;background:#fff;border-radius:50%;transition:transform .25s;}
+.mt input:checked+.mt-l{background:var(--amber);}
+.mt input:checked+.mt-l::after{transform:translateX(-15px);}
+.add-row{display:none;flex-direction:row;gap:7px;padding:0 16px 12px;}
+.add-row.v{display:flex;}
+.ar-input{flex:1;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--rs);color:var(--text);font-size:11px;padding:8px 11px;outline:none;}
+.ar-input.mono{font-family:'JetBrains Mono',monospace;direction:ltr;}
+.ar-input::placeholder{color:var(--text3);}
+.ar-lbl{width:90px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--rs);color:var(--text);font-size:11px;padding:8px 11px;outline:none;font-family:inherit;}
+.ar-lbl::placeholder{color:var(--text3);}
+.ar-ok{background:var(--blue-dim);border:1px solid rgba(77,138,248,.3);border-radius:var(--rs);color:var(--blue);font-size:12px;font-family:inherit;font-weight:600;padding:8px 14px;cursor:pointer;transition:all .2s;white-space:nowrap;}
+.ar-ok:hover{background:rgba(77,138,248,.22);}
+
+/* PLATFORMS */
+.plat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.pc{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;transition:border-color .25s;}
+.pc.on{border-color:rgba(255,255,255,.13);}
+.pc-top{display:flex;align-items:center;justify-content:space-between;padding:12px 13px 8px;}
+.pid{display:flex;align-items:center;gap:8px;}
+.pico{width:30px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0;}
+.pnm{font-size:13px;font-weight:600;}
+.psub{font-size:10px;color:var(--text3);margin-top:1px;}
+.tog{position:absolute;opacity:0;width:0;height:0;}
+.togl{display:block;width:36px;height:19px;background:var(--surface);border-radius:20px;cursor:pointer;position:relative;transition:background .25s;}
+.togl::after{content:'';position:absolute;top:2.5px;right:2.5px;width:14px;height:14px;background:#fff;border-radius:50%;transition:transform .25s;}
+.tog:checked+.togl{background:var(--green);}
+.tog:checked+.togl::after{transform:translateX(-17px);}
+.pb{padding:0 13px 11px;}
+.fi{margin-bottom:8px;}
+.fl{font-size:10px;color:var(--text3);margin-bottom:3px;font-weight:500;}
+.finput{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-size:11px;font-family:'JetBrains Mono',monospace;padding:7px 9px;outline:none;direction:ltr;transition:border-color .2s;}
+.finput:focus{border-color:var(--border2);}
+.finput::placeholder{color:var(--text3);font-size:10px;}
+.pfoot{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--text3);padding:6px 13px;border-top:1px solid var(--border);}
+.pdot{width:5px;height:5px;border-radius:50%;background:var(--text3);flex-shrink:0;transition:all .3s;}
+.pdot.live{background:var(--green);}
+.pdot.err{background:var(--red);}
+.pdot.try{background:var(--amber);animation:blink .8s infinite;}
+.p-tg .pico{background:rgba(42,171,238,.13);color:var(--tg);}
+.p-tg.on{border-color:rgba(42,171,238,.22);}
+.p-tw .pico{background:rgba(29,161,242,.13);color:var(--tw);}
+.p-tw.on{border-color:rgba(29,161,242,.22);}
+.p-tt .pico{background:rgba(255,0,80,.1);color:var(--tt);}
+.p-tt.on{border-color:rgba(255,0,80,.18);}
+.p-ig .pico{background:rgba(225,48,108,.1);color:var(--ig);}
+.p-ig.on{border-color:rgba(225,48,108,.18);}
+
+/* RIGHT */
+.rp-sec{padding:16px 18px;border-bottom:1px solid var(--border);}
+.rp-sec:last-child{border-bottom:none;flex:1;}
+.go-wrap{padding:16px 18px;}
+.gl{width:100%;background:var(--red);color:#fff;font-family:inherit;font-size:15px;font-weight:700;padding:16px;border:none;border-radius:var(--r);cursor:pointer;transition:all .25s;position:relative;overflow:hidden;}
+.gl::after{content:'';position:absolute;inset:0;background:rgba(255,255,255,0);transition:background .2s;}
+.gl:hover::after{background:rgba(255,255,255,.08);}
+.gl:active{transform:scale(.98);}
+.gl.streaming{background:var(--bg3);border:2px solid var(--red);color:var(--red);}
+.gl.connecting{background:var(--amber-dim);border:2px solid var(--amber);color:var(--amber);cursor:not-allowed;}
+.btn-in{display:flex;align-items:center;justify-content:center;gap:8px;pointer-events:none;}
+.brec{width:9px;height:9px;border-radius:50%;background:currentColor;animation:blink 1s infinite;}
+.chips{display:flex;flex-wrap:wrap;gap:7px;}
+.chip{display:flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:4px 10px;border-radius:20px;border:1px solid;opacity:.3;transition:opacity .3s;}
+.chip.on{opacity:1;}
+.ch-tg{color:var(--tg);border-color:rgba(42,171,238,.4);background:rgba(42,171,238,.07);}
+.ch-tw{color:var(--tw);border-color:rgba(29,161,242,.4);background:rgba(29,161,242,.07);}
+.ch-tt{color:var(--tt);border-color:rgba(255,0,80,.35);background:rgba(255,0,80,.07);}
+.ch-ig{color:var(--ig);border-color:rgba(225,48,108,.3);background:rgba(225,48,108,.07);}
+.stats-g{display:grid;grid-template-columns:1fr 1fr;gap:7px;}
+.sb{background:var(--bg3);border:1px solid var(--border);border-radius:var(--rs);padding:11px;text-align:center;}
+.sv{font-size:17px;font-weight:700;font-family:'JetBrains Mono',monospace;}
+.sl{font-size:10px;color:var(--text3);margin-top:2px;}
+.fo-status{display:flex;flex-direction:column;gap:8px;}
+.fsr{display:flex;align-items:center;justify-content:space-between;}
+.fsl{font-size:12px;color:var(--text2);}
+.fsv{font-size:12px;font-weight:600;color:var(--text);font-family:'JetBrains Mono',monospace;}
+.prog{height:4px;background:var(--surface);border-radius:4px;overflow:hidden;}
+.prog-fill{height:100%;background:var(--green);border-radius:4px;transition:width .5s;width:0%;}
+.srow{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.srow:last-child{margin-bottom:0;}
+.slbl{font-size:12px;color:var(--text2);}
+.msel{background:var(--surface);border:1px solid var(--border2);color:var(--text);font-size:11px;font-family:inherit;padding:5px 8px;border-radius:6px;outline:none;cursor:pointer;}
+.log-list{display:flex;flex-direction:column;gap:5px;max-height:200px;overflow-y:auto;}
+.li{display:flex;align-items:flex-start;gap:7px;font-size:11px;}
+.lt{color:var(--text3);font-family:'JetBrains Mono',monospace;font-size:10px;white-space:nowrap;margin-top:1px;}
+.lm{color:var(--text2);line-height:1.5;}
+.lm.s{color:var(--green);}
+.lm.e{color:var(--red);}
+.lm.w{color:var(--amber);}
+@media(max-width:860px){.layout{grid-template-columns:1fr;height:auto;overflow:visible;}.right{border-right:none;border-top:1px solid var(--border);}.plat-grid{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-pulse" id="hDot"></div>
+    <span class="logo-name">StreamControl</span>
+    <span class="on-air" id="onAir">ON AIR</span>
+  </div>
+  <div class="h-right">
+    <div class="h-timer" id="hTimer">00:00:00</div>
+    <div class="h-pill">
+      <div class="h-dot" id="hPill"></div>
+      <span id="hStatus">جاهز</span>
+    </div>
+  </div>
+</header>
+
+<div class="layout">
+<div class="left">
+
+  <!-- PREVIEW -->
+  <div class="prev-card">
+    <div class="prev-header">
+      <span class="prev-title">معاينة البث المباشر</span>
+      <div class="src-badge">
+        <div class="src-dot" id="prevDot"></div>
+        <span id="prevName">لا يوجد مصدر</span>
+      </div>
+    </div>
+    <div class="video-box">
+      <video id="mainVideo" autoplay muted playsinline></video>
+      <div class="video-overlay" id="vidOv">
+        <div class="play-icon">▶</div>
+        <p class="ov-text">أضف رابط IPTV ثم اضغط "معاينة"</p>
+      </div>
+      <div class="vid-badge" id="vidBadge">LIVE</div>
+      <div class="src-info" id="srcInfo"></div>
+    </div>
+    <div class="prev-footer">
+      <div>
+        <span class="pf-stat">المصدر: <span id="pfName">—</span></span>
+        <span class="pf-stat" style="margin-right:14px">الحالة: <span id="pfState">متوقف</span></span>
+      </div>
+      <div class="pf-btns">
+        <button class="pf-btn" onclick="previewCurrent()">▶ معاينة</button>
+        <button class="pf-btn danger" onclick="stopPreview()">■ إيقاف</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- IPTV SOURCES -->
+  <div class="sources-card">
+    <div class="sc-head">
+      <div>
+        <span class="sc-title">روابط IPTV</span>
+        <span style="font-size:11px;color:var(--text3);margin-right:8px">— تبديل تلقائي عند الانقطاع</span>
+      </div>
+      <button class="add-btn" onclick="toggleAdd()">＋ إضافة رابط</button>
+    </div>
+    <div class="url-list" id="urlList"></div>
+    <div class="add-row" id="addRow">
+      <input class="ar-lbl" id="newLbl" placeholder="اسم القناة">
+      <input class="ar-input mono" id="newUrl" placeholder="http://… أو rtmp://… أو .m3u8" onkeydown="if(event.key==='Enter')doAdd()">
+      <button class="ar-ok" onclick="doAdd()">إضافة</button>
+    </div>
+    <div class="fo-bar">
+      <span class="fo-txt">⟳ التبديل التلقائي للرابط الاحتياطي</span>
+      <div style="display:flex;align-items:center;gap:7px;">
+        <span style="font-size:11px;color:var(--text3)">مفعّل</span>
+        <div class="mt"><input type="checkbox" id="foOn" checked><label class="mt-l" for="foOn"></label></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PLATFORMS -->
+  <div>
+    <div class="slabel">منصات البث المتزامن</div>
+    <div class="plat-grid">
+      <div class="pc p-tg" id="pc-tg">
+        <div class="pc-top">
+          <div class="pid"><div class="pico">TG</div><div><div class="pnm">تيليجرام</div><div class="psub">RTMP</div></div></div>
+          <div style="position:relative;"><input type="checkbox" class="tog" id="t-tg" onchange="togPlat('tg',this)"><label class="togl" for="t-tg"></label></div>
+        </div>
+        <div class="pb">
+          <div class="fi"><div class="fl">RTMP URL</div><input class="finput" id="u-tg" placeholder="rtmp://dc4-1.rtmp.t.me/s/"></div>
+          <div class="fi"><div class="fl">Stream Key</div><input class="finput" id="k-tg" placeholder="مفتاح من تيليجرام" type="password"></div>
+        </div>
+        <div class="pfoot"><div class="pdot" id="d-tg"></div><span id="s-tg">غير مفعّل</span></div>
+      </div>
+      <div class="pc p-tw" id="pc-tw">
+        <div class="pc-top">
+          <div class="pid"><div class="pico">𝕏</div><div><div class="pnm">تويتر / X</div><div class="psub">Live</div></div></div>
+          <div style="position:relative;"><input type="checkbox" class="tog" id="t-tw" onchange="togPlat('tw',this)"><label class="togl" for="t-tw"></label></div>
+        </div>
+        <div class="pb">
+          <div class="fi"><div class="fl">RTMP URL</div><input class="finput" id="u-tw" value="rtmps://ingest.pscp.tv:443/x/"></div>
+          <div class="fi"><div class="fl">Stream Key</div><input class="finput" id="k-tw" placeholder="مفتاح Twitter Live" type="password"></div>
+        </div>
+        <div class="pfoot"><div class="pdot" id="d-tw"></div><span id="s-tw">غير مفعّل</span></div>
+      </div>
+      <div class="pc p-tt" id="pc-tt">
+        <div class="pc-top">
+          <div class="pid"><div class="pico">TT</div><div><div class="pnm">تيك توك</div><div class="psub">LIVE</div></div></div>
+          <div style="position:relative;"><input type="checkbox" class="tog" id="t-tt" onchange="togPlat('tt',this)"><label class="togl" for="t-tt"></label></div>
+        </div>
+        <div class="pb">
+          <div class="fi"><div class="fl">RTMP URL</div><input class="finput" id="u-tt" value="rtmp://push.tiktok.com/live/"></div>
+          <div class="fi"><div class="fl">Stream Key</div><input class="finput" id="k-tt" placeholder="مفتاح TikTok Live" type="password"></div>
+        </div>
+        <div class="pfoot"><div class="pdot" id="d-tt"></div><span id="s-tt">غير مفعّل</span></div>
+      </div>
+      <div class="pc p-ig" id="pc-ig">
+        <div class="pc-top">
+          <div class="pid"><div class="pico">IG</div><div><div class="pnm">إنستجرام</div><div class="psub">Live</div></div></div>
+          <div style="position:relative;"><input type="checkbox" class="tog" id="t-ig" onchange="togPlat('ig',this)"><label class="togl" for="t-ig"></label></div>
+        </div>
+        <div class="pb">
+          <div class="fi"><div class="fl">RTMP URL</div><input class="finput" id="u-ig" value="rtmps://edgetee-upload-lax3-1.xx.fbcdn.net:443/rtmp/"></div>
+          <div class="fi"><div class="fl">Stream Key</div><input class="finput" id="k-ig" placeholder="مفتاح Instagram Live" type="password"></div>
+        </div>
+        <div class="pfoot"><div class="pdot" id="d-ig"></div><span id="s-ig">غير مفعّل</span></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- RIGHT -->
+<div class="right">
+  <div class="go-wrap">
+    <button class="gl" id="glBtn" onclick="toggleStream()">
+      <div class="btn-in"><span id="glTxt">🔴&nbsp; ابدأ البث الآن</span></div>
+    </button>
+  </div>
+
+  <div class="rp-sec">
+    <div class="slabel" style="margin-bottom:10px">المنصات المفعّلة</div>
+    <div class="chips">
+      <div class="chip ch-tg" id="ch-tg">● تيليجرام</div>
+      <div class="chip ch-tw" id="ch-tw">● تويتر</div>
+      <div class="chip ch-tt" id="ch-tt">● تيك توك</div>
+      <div class="chip ch-ig" id="ch-ig">● إنستجرام</div>
+    </div>
+  </div>
+
+  <div class="rp-sec">
+    <div class="slabel" style="margin-bottom:10px">حالة التبديل التلقائي</div>
+    <div class="fo-status">
+      <div class="fsr"><span class="fsl">المصدر النشط</span><span class="fsv" id="foSrc">—</span></div>
+      <div class="fsr"><span class="fsl">عدد مرات التبديل</span><span class="fsv" id="foCount">0</span></div>
+      <div class="fsr"><span class="fsl">صحة الاتصال</span><span class="fsv" id="foHealth" style="color:var(--text3)">—</span></div>
+      <div class="prog"><div class="prog-fill" id="foBar"></div></div>
+    </div>
+  </div>
+
+  <div class="rp-sec">
+    <div class="slabel" style="margin-bottom:10px">إحصائيات</div>
+    <div class="stats-g">
+      <div class="sb"><div class="sv" id="stDur">00:00</div><div class="sl">مدة البث</div></div>
+      <div class="sb"><div class="sv" id="stPlat">0</div><div class="sl">منصة نشطة</div></div>
+      <div class="sb"><div class="sv" id="stSrc">0</div><div class="sl">روابط IPTV</div></div>
+      <div class="sb"><div class="sv" id="stSwitch">0</div><div class="sl">تبديل تلقائي</div></div>
+    </div>
+  </div>
+
+  <div class="rp-sec">
+    <div class="slabel" style="margin-bottom:10px">إعدادات البث</div>
+    <div class="srow"><span class="slbl">Video Bitrate</span><select class="msel" id="bitrate"><option value="6000">6000 Kbps</option><option value="4500" selected>4500 Kbps</option><option value="3000">3000 Kbps</option><option value="1500">1500 Kbps</option></select></div>
+    <div class="srow"><span class="slbl">معدل الإطارات</span><select class="msel" id="fpsS"><option>60 fps</option><option selected>30 fps</option><option>25 fps</option></select></div>
+    <div class="srow"><span class="slbl">تأخر التبديل</span><select class="msel" id="foDelay"><option value="5">5 ثواني</option><option value="10" selected>10 ثواني</option><option value="20">20 ثانية</option><option value="30">30 ثانية</option></select></div>
+    <div class="srow"><span class="slbl">إعادة المحاولة</span><select class="msel"><option>تلقائي</option><option>يدوي</option></select></div>
+  </div>
+
+  <div class="rp-sec">
+    <div class="slabel" style="margin-bottom:10px">سجل الأحداث</div>
+    <div class="log-list" id="logList">
+      <div class="li"><span class="lt">--:--</span><span class="lm">النظام جاهز. أضف روابط IPTV وفعّل المنصات.</span></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<script>
+// STATE
+let sources=[], nextId=1, activeIdx=0, foCount=0;
+let isStreaming=false, streamStart=null, timerInt=null;
+let hls=null, addOpen=false;
+let platOn={tg:false,tw:false,tt:false,ig:false};
+const platNames={tg:'تيليجرام',tw:'تويتر',tt:'تيك توك',ig:'إنستجرام'};
+
+// ── ADD ROW ──
+function toggleAdd(){
+  addOpen=!addOpen;
+  document.getElementById('addRow').classList.toggle('v',addOpen);
+  if(addOpen) setTimeout(()=>document.getElementById('newUrl').focus(),50);
+}
+function doAdd(){
+  const u=document.getElementById('newUrl'),l=document.getElementById('newLbl');
+  const url=u.value.trim();
+  if(!url){u.style.borderColor='rgba(255,53,71,.5)';setTimeout(()=>u.style.borderColor='',1500);return;}
+  const label=l.value.trim()||'قناة '+nextId;
+  sources.push({id:nextId++,label,url,status:'idle'});
+  u.value='';l.value='';
+  renderSrcs();syncStats();
+  addLog('تم الإضافة: '+label,'');
+  if(sources.length===1){activeIdx=0;syncFoPanel();}
+}
+function delSrc(id){
+  sources=sources.filter(s=>s.id!==id);
+  if(activeIdx>=sources.length) activeIdx=Math.max(0,sources.length-1);
+  renderSrcs();syncStats();
+}
+function makeActive(i){activeIdx=i;renderSrcs();syncFoPanel();}
+
+function renderSrcs(){
+  const el=document.getElementById('urlList');
+  if(!sources.length){el.innerHTML='<div style="padding:14px 16px;font-size:12px;color:var(--text3);text-align:center">لا توجد روابط — أضف رابط IPTV</div>';return;}
+  el.innerHTML='';
+  sources.forEach((s,i)=>{
+    const isAct=i===activeIdx;
+    const rc=s.status==='ok'?'act':s.status==='error'?'err':s.status==='trying'?'trying':'';
+    const dc=s.status==='ok'?'ok':s.status==='error'?'er':s.status==='trying'?'tr':'';
+    const d=document.createElement('div');
+    d.className='url-row '+rc;
+    d.innerHTML=`${isAct?'<div class="act-lbl">ACTIVE</div>':''}
+<div class="url-rank">${i+1}</div>
+<div class="udot ${dc}"></div>
+<input class="ulbl" value="${esc(s.label)}" placeholder="اسم" onchange="sources[${i}].label=this.value">
+<input class="uurl" value="${esc(s.url)}" placeholder="رابط IPTV" onchange="sources[${i}].url=this.value" dir="ltr">
+<div class="uacts">
+  <button class="uact play" onclick="previewIdx(${i})" title="معاينة">▶</button>
+  ${!isAct?`<button class="uact" onclick="makeActive(${i})" title="تفعيل">✓</button>`:''}
+  <button class="uact del" onclick="delSrc(${s.id})" title="حذف">✕</button>
+</div>`;
+    el.appendChild(d);
+  });
+}
+function esc(s){return String(s).replace(/"/g,'&quot;').replace(/</g,'&lt;');}
+
+// ── PREVIEW ──
+function previewIdx(i){activeIdx=i;renderSrcs();syncFoPanel();loadVideo(sources[i]);}
+function previewCurrent(){if(sources.length)loadVideo(sources[activeIdx]);}
+function loadVideo(src){
+  const v=document.getElementById('mainVideo');
+  if(hls){hls.destroy();hls=null;}
+  document.getElementById('vidOv').classList.add('hidden');
+  document.getElementById('prevDot').classList.add('on');
+  document.getElementById('prevName').textContent=src.label;
+  document.getElementById('pfName').textContent=src.label;
+  document.getElementById('pfState').textContent='جاري التحميل...';
+  document.getElementById('srcInfo').classList.add('v');
+  document.getElementById('srcInfo').textContent=src.url.length>55?src.url.slice(0,55)+'…':src.url;
+  const url=src.url;
+  if(Hls&&Hls.isSupported()&&(url.includes('.m3u8')||url.toLowerCase().includes('hls'))){
+    hls=new Hls({enableWorker:true,lowLatencyMode:true,fragLoadingRetryDelay:1000,fragLoadingMaxRetry:3});
+    hls.loadSource(url);hls.attachMedia(v);
+    hls.on(Hls.Events.MANIFEST_PARSED,()=>{
+      v.play().catch(()=>{});
+      setSrcSt(activeIdx,'ok');
+      document.getElementById('pfState').textContent='يعمل ✓';
+      addLog('✅ معاينة: '+src.label,'s');
+    });
+    hls.on(Hls.Events.ERROR,(_,d)=>{
+      if(d.fatal){setSrcSt(activeIdx,'error');document.getElementById('pfState').textContent='خطأ';addLog('❌ فشل: '+src.label,'e');if(document.getElementById('foOn').checked)triggerFailover();}
+    });
+  } else {
+    v.src=url;
+    v.oncanplay=()=>{v.play().catch(()=>{});setSrcSt(activeIdx,'ok');document.getElementById('pfState').textContent='يعمل ✓';addLog('✅ معاينة: '+src.label,'s');};
+    v.onerror=()=>{setSrcSt(activeIdx,'error');document.getElementById('pfState').textContent='خطأ في الاتصال';addLog('❌ فشل: '+src.label,'e');if(document.getElementById('foOn').checked)triggerFailover();};
+  }
+}
+function stopPreview(){
+  const v=document.getElementById('mainVideo');
+  if(hls){hls.destroy();hls=null;}
+  v.src='';v.oncanplay=null;v.onerror=null;
+  document.getElementById('vidOv').classList.remove('hidden');
+  document.getElementById('prevDot').classList.remove('on');
+  document.getElementById('prevName').textContent='متوقف';
+  document.getElementById('pfState').textContent='متوقف';
+  document.getElementById('pfName').textContent='—';
+  document.getElementById('vidBadge').classList.remove('v');
+  document.getElementById('srcInfo').classList.remove('v');
+  sources.forEach((_,i)=>setSrcSt(i,'idle'));
+}
+
+// ── FAILOVER ──
+function setSrcSt(i,st){if(sources[i])sources[i].status=st;renderSrcs();syncFoPanel();}
+function triggerFailover(){
+  const next=findNext();
+  if(next===-1){addLog('⚠️ كل الروابط فشلت — إعادة المحاولة','w');setTimeout(()=>{sources.forEach((_,i)=>setSrcSt(i,'idle'));activeIdx=0;triggerFailover();},5000);return;}
+  foCount++;document.getElementById('foCount').textContent=foCount;document.getElementById('stSwitch').textContent=foCount;
+  const delay=parseInt(document.getElementById('foDelay').value)||10;
+  setSrcSt(activeIdx,'error');setSrcSt(next,'trying');
+  addLog('⟳ تبديل إلى: '+sources[next].label+' ('+delay+'ث)','w');
+  setTimeout(()=>{activeIdx=next;loadVideo(sources[next]);renderSrcs();syncFoPanel();},delay*1000);
+}
+function findNext(){
+  for(let i=1;i<=sources.length;i++){const idx=(activeIdx+i)%sources.length;if(sources[idx]&&sources[idx].status!=='error')return idx;}
+  return -1;
+}
+function syncFoPanel(){
+  const s=sources[activeIdx];
+  document.getElementById('foSrc').textContent=s?s.label:'—';
+  if(!s){document.getElementById('foHealth').textContent='—';document.getElementById('foBar').style.width='0%';return;}
+  const h=s.status==='ok'?'ممتاز 🟢':s.status==='trying'?'جاري الفحص 🟡':s.status==='error'?'فشل 🔴':'غير محدد';
+  document.getElementById('foHealth').textContent=h;
+  const pct=s.status==='ok'?100:s.status==='trying'?55:0;
+  const bar=document.getElementById('foBar');
+  bar.style.width=pct+'%';
+  bar.style.background=s.status==='ok'?'var(--green)':s.status==='trying'?'var(--amber)':'var(--red)';
+}
+
+// ── PLATFORMS ──
+function togPlat(id,cb){
+  platOn[id]=cb.checked;
+  document.getElementById('pc-'+id).classList.toggle('on',cb.checked);
+  document.getElementById('ch-'+id).classList.toggle('on',cb.checked);
+  const dot=document.getElementById('d-'+id);
+  if(cb.checked){dot.className='pdot';dot.style.background='var(--amber)';document.getElementById('s-'+id).textContent='منتظر البث';addLog(platNames[id]+' — تفعيل','');}
+  else{dot.className='pdot';dot.style.background='var(--text3)';document.getElementById('s-'+id).textContent='غير مفعّل';}
+  syncStats();
+}
+
+// ── STREAM ──
+async function toggleStream(){
+  if(isStreaming){stopStream();return;}
+  const ap=Object.keys(platOn).filter(k=>platOn[k]);
+  if(!ap.length){addLog('⚠️ فعّل منصة واحدة على الأقل','w');return;}
+  if(!sources.length){addLog('⚠️ أضف رابط IPTV واحداً على الأقل','w');return;}
+  let ok=true;
+  ap.forEach(id=>{if(!document.getElementById('k-'+id).value.trim()){addLog('❌ أدخل Stream Key لـ '+platNames[id],'e');ok=false;}});
+  if(!ok)return;
+
+  const btn=document.getElementById('glBtn');
+  btn.className='gl connecting';document.getElementById('glTxt').textContent='⏳ جاري الاتصال...';
+  ap.forEach(id=>{document.getElementById('d-'+id).className='pdot try';document.getElementById('s-'+id).textContent='جاري الاتصال...';});
+  addLog('جاري إرسال الأوامر للسيرفر...','w');
+
+  const payload=buildPayload(ap);
+  console.log('[StreamControl] Payload:',JSON.stringify(payload,null,2));
+  // ↓ فعّل هذا السطر لتوصيله بسيرفر Hetzner:
+  await fetch('http://49.12.200.121:3000/start', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+
+  await sleep(2000);
+  startStream(ap);
+}
+function buildPayload(plats){
+  return {
+    iptv:{
+      sources:sources.map((s,i)=>({priority:i+1,label:s.label,url:s.url})),
+      activeUrl:sources[activeIdx]?.url,
+      failover:document.getElementById('foOn').checked,
+      failoverDelaySec:parseInt(document.getElementById('foDelay').value)
+    },
+    encode:{bitrate:parseInt(document.getElementById('bitrate').value),fps:parseInt(document.getElementById('fpsS').value)},
+    destinations:plats.map(id=>({platform:id,rtmpUrl:document.getElementById('u-'+id).value.trim(),streamKey:document.getElementById('k-'+id).value.trim()}))
+  };
+}
+function startStream(plats){
+  isStreaming=true;streamStart=Date.now();
+  const btn=document.getElementById('glBtn');
+  btn.className='gl streaming';
+  document.getElementById('glTxt').innerHTML='<div class="btn-in"><div class="brec"></div><span>إيقاف البث</span></div>';
+  document.getElementById('hDot').classList.add('live');
+  document.getElementById('onAir').classList.add('v');
+  document.getElementById('hPill').className='h-dot live';
+  document.getElementById('hStatus').textContent='بث مباشر';
+  document.getElementById('hTimer').classList.add('v');
+  document.getElementById('vidBadge').classList.add('v');
+  plats.forEach(id=>{document.getElementById('d-'+id).className='pdot live';document.getElementById('s-'+id).textContent='بث مباشر 🟢';addLog('✅ '+platNames[id]+' — متصل','s');});
+  timerInt=setInterval(()=>{const e=Date.now()-streamStart;document.getElementById('hTimer').textContent=fmt(e);document.getElementById('stDur').textContent=fmt(e,true);},1000);
+  if(sources.length) previewCurrent();
+}
+function stopStream(){
+  isStreaming=false;clearInterval(timerInt);
+  const btn=document.getElementById('glBtn');
+  btn.className='gl';document.getElementById('glTxt').textContent='🔴  ابدأ البث الآن';
+  document.getElementById('hDot').classList.remove('live');
+  document.getElementById('onAir').classList.remove('v');
+  document.getElementById('hPill').className='h-dot ready';
+  document.getElementById('hStatus').textContent='تم الإيقاف';
+  document.getElementById('hTimer').classList.remove('v');
+  document.getElementById('vidBadge').classList.remove('v');
+  document.getElementById('stDur').textContent='00:00';
+  Object.keys(platOn).forEach(id=>{if(platOn[id]){document.getElementById('d-'+id).className='pdot';document.getElementById('d-'+id).style.background='var(--amber)';document.getElementById('s-'+id).textContent='منتظر البث';}});
+  addLog('تم إيقاف البث بنجاح','s');
+  fetch('http://49.12.200.121:3000/stop', {method:'POST'});
+}
+
+// ── UTILS ──
+function syncStats(){
+  document.getElementById('stPlat').textContent=Object.values(platOn).filter(Boolean).length;
+  document.getElementById('stSrc').textContent=sources.length;
+}
+function addLog(msg,type){
+  const w=document.getElementById('logList');
+  const now=new Date();
+  const t=now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0');
+  const d=document.createElement('div');d.className='li';
+  d.innerHTML=`<span class="lt">${t}</span><span class="lm ${type}">${msg}</span>`;
+  w.insertBefore(d,w.firstChild);
+  if(w.children.length>30)w.removeChild(w.lastChild);
+}
+function fmt(ms,s2){
+  const s=Math.floor(ms/1000),h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60;
+  if(s2)return(h>0?h+':':'')+m.toString().padStart(2,'0')+':'+sec.toString().padStart(2,'0');
+  return h.toString().padStart(2,'0')+':'+m.toString().padStart(2,'0')+':'+sec.toString().padStart(2,'0');
+}
+function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
+
+// INIT
+document.getElementById('hPill').classList.add('ready');
+renderSrcs();syncStats();syncFoPanel();
+</script>
+</body>
+</html>
