@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>TeleStream</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/hls.js@latest/dist/hls.min.js"></script>
+<style>
+:root{
+  --bg:#07090e;--bg2:#0d0f16;--bg3:#12151e;--surface:#181c27;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.14);
+  --text:#e4e6f0;--text2:#8890a8;--text3:#454d62;
+  --tg:#2AABEE;--tg-dim:rgba(42,171,238,0.12);
+  --red:#ff3b4e;--red-dim:rgba(255,59,78,0.14);
+  --green:#00d97e;--green-dim:rgba(0,217,126,0.12);
+  --amber:#ffb627;
+  --safe-top: env(safe-area-inset-top);
+  --safe-bottom: env(safe-area-inset-bottom);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'IBM Plex Sans Arabic',sans-serif;overflow-x:hidden;}
+::-webkit-scrollbar{display:none;}
+
+/* ── HEADER ── */
+.header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 16px;padding-top:calc(12px + var(--safe-top));
+  background:var(--bg2);border-bottom:1px solid var(--border);
+  position:sticky;top:0;z-index:100;
+}
+.header-logo{display:flex;align-items:center;gap:8px;}
+.header-icon{width:28px;height:28px;background:var(--tg-dim);border:1px solid rgba(42,171,238,.3);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:14px;}
+.header-title{font-size:15px;font-weight:700;}
+.header-right{display:flex;align-items:center;gap:8px;}
+.live-pill{display:flex;align-items:center;gap:5px;font-size:11px;font-weight:700;letter-spacing:.5px;background:var(--red);color:#fff;padding:4px 10px;border-radius:20px;display:none;}
+.live-pill.v{display:flex;animation:blink 1.2s infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.5}}
+.status-dot{width:7px;height:7px;border-radius:50%;background:var(--text3);}
+.status-dot.ok{background:var(--green);}
+.status-dot.err{background:var(--red);}
+
+/* ── TABS ── */
+.tabs{
+  display:flex;background:var(--bg2);
+  border-bottom:1px solid var(--border);
+  overflow-x:auto;padding:0 8px;
+}
+.tab{
+  padding:11px 14px;font-size:12px;font-weight:600;
+  color:var(--text3);cursor:pointer;
+  border-bottom:2px solid transparent;
+  white-space:nowrap;flex-shrink:0;transition:all .2s;
+}
+.tab.active{color:var(--tg);border-bottom-color:var(--tg);}
+.tbadge{font-size:10px;background:var(--surface);padding:1px 5px;border-radius:8px;margin-right:3px;}
+.tab.active .tbadge{background:var(--tg-dim);color:var(--tg);}
+
+/* ── PAGES ── */
+.page{display:none;padding:14px 14px calc(80px + var(--safe-bottom));min-height:calc(100vh - 95px);}
+.page.active{display:block;}
+
+/* ── CARDS ── */
+.card{background:var(--bg3);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:12px;}
+.card-head{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid var(--border);}
+.card-title{font-size:13px;font-weight:600;color:var(--text2);}
+.card-body{padding:13px 14px;}
+
+/* ── INPUTS ── */
+.fi{width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:9px;color:var(--text);font-size:14px;font-family:inherit;padding:12px 13px;outline:none;appearance:none;-webkit-appearance:none;}
+.fi:focus{border-color:rgba(42,171,238,.5);}
+.fi::placeholder{color:var(--text3);}
+.fi.mono{font-family:'JetBrains Mono',monospace;direction:ltr;font-size:13px;}
+.fi.pass{font-family:'JetBrains Mono',monospace;direction:ltr;letter-spacing:2px;font-size:13px;}
+.field{margin-bottom:10px;}
+.field:last-child{margin-bottom:0;}
+.fl{font-size:11px;color:var(--text3);margin-bottom:5px;font-weight:500;display:flex;align-items:center;justify-content:space-between;}
+
+/* ── BUTTONS ── */
+.btn{font-family:inherit;cursor:pointer;border-radius:10px;transition:all .18s;font-weight:600;font-size:14px;display:flex;align-items:center;justify-content:center;gap:7px;border:none;padding:13px 18px;width:100%;}
+.btn:active{transform:scale(.97);}
+.btn-tg{background:var(--tg);color:#fff;}
+.btn-tg:hover{background:#22a0e0;}
+.btn-sec{background:var(--surface);border:1px solid var(--border2);color:var(--text2);}
+.btn-red{background:var(--red-dim);border:1px solid rgba(255,59,78,.3);color:var(--red);}
+.btn-sm{padding:8px 14px;font-size:12px;width:auto;border-radius:8px;}
+.btn-icon{width:38px;height:38px;border-radius:9px;border:1px solid var(--border2);background:var(--surface);color:var(--text2);font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0;}
+.btn-icon:active{transform:scale(.93);}
+.btn-icon.del{border-color:rgba(255,59,78,.3);color:var(--red);background:var(--red-dim);}
+.btn-icon.add{border-color:rgba(42,171,238,.3);color:var(--tg);background:var(--tg-dim);}
+.btn-icon.play{border-color:rgba(0,217,126,.3);color:var(--green);background:var(--green-dim);}
+
+/* ── GO LIVE BUTTON ── */
+.go-live-btn{
+  position:fixed;bottom:0;left:0;right:0;
+  padding:16px 20px;padding-bottom:calc(16px + var(--safe-bottom));
+  background:var(--bg2);border-top:1px solid var(--border);
+  z-index:100;
+}
+.go-btn{
+  width:100%;font-family:inherit;font-size:16px;font-weight:700;
+  padding:16px;border:none;border-radius:12px;cursor:pointer;
+  background:linear-gradient(135deg,#229ed9,#1a8bc5);
+  color:#fff;transition:all .25s;display:flex;align-items:center;justify-content:center;gap:9px;
+  box-shadow:0 4px 20px rgba(42,171,238,.3);
+}
+.go-btn:active{transform:scale(.97);}
+.go-btn.streaming{background:var(--bg3);border:2px solid var(--red);color:var(--red);box-shadow:0 0 20px rgba(255,59,78,.15);}
+.go-btn.connecting{background:var(--amber);color:#000;box-shadow:none;cursor:not-allowed;}
+.btn-rec{width:10px;height:10px;border-radius:50%;background:currentColor;animation:blink 1s infinite;}
+
+/* ── STREAM LIST ── */
+.stream-item{
+  display:flex;align-items:center;gap:10px;
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius:10px;padding:11px 12px;margin-bottom:8px;
+  position:relative;
+}
+.stream-item.active-src{border-color:rgba(0,217,126,.3);background:rgba(0,217,126,.03);}
+.stream-item.error-src{border-color:rgba(255,59,78,.25);}
+.si-dot{width:8px;height:8px;border-radius:50%;background:var(--text3);flex-shrink:0;}
+.si-dot.ok{background:var(--green);}
+.si-dot.err{background:var(--red);}
+.si-dot.try{background:var(--amber);animation:blink .8s infinite;}
+.si-info{flex:1;min-width:0;}
+.si-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.si-url{font-size:10px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;direction:ltr;text-align:left;margin-top:2px;}
+.si-acts{display:flex;gap:5px;flex-shrink:0;}
+.active-tag{position:absolute;top:-1px;right:-1px;background:var(--green);color:#000;font-size:8px;font-weight:800;padding:2px 7px;border-radius:0 9px 0 7px;}
+
+/* ── STATS ── */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px;}
+.stat-box{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:11px 6px;text-align:center;}
+.stat-val{font-size:16px;font-weight:700;font-family:'JetBrains Mono',monospace;}
+.stat-lbl{font-size:9px;color:var(--text3);margin-top:2px;}
+
+/* ── TOGGLE ── */
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;}
+.toggle-txt{font-size:13px;color:var(--text2);}
+.mt{position:relative;}
+.mt input{opacity:0;width:0;height:0;position:absolute;}
+.mt-l{display:block;width:44px;height:24px;background:var(--surface);border-radius:24px;cursor:pointer;position:relative;transition:background .25s;}
+.mt-l::after{content:'';position:absolute;top:3px;right:3px;width:18px;height:18px;background:#fff;border-radius:50%;transition:transform .25s;}
+.mt input:checked+.mt-l{background:var(--amber);}
+.mt input:checked+.mt-l::after{transform:translateX(-20px);}
+
+/* ── IPTV LIST ── */
+.iptv-ch-item{
+  display:flex;align-items:center;gap:10px;
+  padding:11px 14px;border-bottom:1px solid var(--border);
+  cursor:pointer;transition:background .15s;
+}
+.iptv-ch-item:active{background:rgba(255,255,255,.03);}
+.iptv-ch-item.playing{background:rgba(42,171,238,.06);}
+.iptv-logo{width:36px;height:36px;border-radius:8px;object-fit:cover;background:var(--surface);flex-shrink:0;}
+.iptv-logo-ph{width:36px;height:36px;border-radius:8px;background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.iptv-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;}
+.iptv-grp{font-size:11px;color:var(--text3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.iptv-empty{padding:30px;text-align:center;color:var(--text3);font-size:13px;}
+.iptv-loading{padding:30px;text-align:center;color:var(--tg);font-size:13px;}
+.iptv-count{font-size:11px;color:var(--text3);padding:8px 14px;border-bottom:1px solid var(--border);}
+
+/* ── LOGIN TABS ── */
+.ltab-row{display:flex;gap:6px;margin-bottom:12px;}
+.ltab{font-size:12px;font-weight:600;padding:8px 16px;border-radius:9px;cursor:pointer;color:var(--text3);background:var(--surface);border:1px solid var(--border);transition:all .2s;flex:1;text-align:center;}
+.ltab.active{background:var(--tg-dim);color:var(--tg);border-color:rgba(42,171,238,.3);}
+
+/* ── PLAYER ── */
+.player-box{aspect-ratio:16/9;background:#02030a;border-radius:10px;overflow:hidden;position:relative;display:flex;align-items:center;justify-content:center;margin-bottom:10px;}
+#iptvVideo{width:100%;height:100%;object-fit:contain;}
+.player-ov{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:8px;background:rgba(2,3,10,.92);}
+.player-ov.h{display:none;}
+
+/* ── LOG ── */
+.log-list{display:flex;flex-direction:column;gap:5px;max-height:160px;overflow-y:auto;}
+.li{display:flex;align-items:flex-start;gap:6px;font-size:11px;}
+.lt{color:var(--text3);font-family:'JetBrains Mono',monospace;font-size:10px;white-space:nowrap;flex-shrink:0;}
+.lm{color:var(--text2);line-height:1.5;}
+.lm.s{color:var(--green);}
+.lm.e{color:var(--red);}
+.lm.w{color:var(--amber);}
+.lm.i{color:var(--tg);}
+
+/* ── SAVED PILL ── */
+.saved-pill{font-size:10px;background:var(--green-dim);color:var(--green);border:1px solid rgba(0,217,126,.3);padding:2px 8px;border-radius:10px;display:none;}
+.saved-pill.v{display:inline-block;}
+
+/* ── IMPORT ── */
+.big-ta{width:100%;background:var(--bg2);border:1px solid var(--border2);border-radius:9px;color:var(--text);font-size:12px;font-family:'JetBrains Mono',monospace;padding:11px 12px;outline:none;resize:vertical;min-height:80px;direction:ltr;line-height:1.7;}
+.big-ta::placeholder{color:var(--text3);font-family:'IBM Plex Sans Arabic',sans-serif;direction:rtl;}
+
+/* ── SLOT SELECTOR ── */
+.slot-selector{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:12px;}
+.slot-btn{flex-shrink:0;padding:8px 16px;border-radius:20px;font-size:12px;font-weight:700;cursor:pointer;border:2px solid var(--border);background:var(--surface);color:var(--text2);transition:all .2s;font-family:inherit;}
+.slot-btn.active-slot{border-color:var(--tg);color:var(--tg);background:var(--tg-dim);}
+.slot-btn.streaming-slot{border-color:var(--green);color:var(--green);background:var(--green-dim);}
+
+/* ── ADD CHANNEL SHEET ── */
+.bottom-sheet{position:fixed;bottom:0;left:0;right:0;background:var(--bg2);border-top:1px solid var(--border2);border-radius:20px 20px 0 0;padding:16px 16px calc(20px + var(--safe-bottom));z-index:200;transform:translateY(100%);transition:transform .3s;max-height:80vh;overflow-y:auto;}
+.bottom-sheet.open{transform:translateY(0);}
+.bs-handle{width:40px;height:4px;background:var(--border2);border-radius:4px;margin:0 auto 16px;}
+.bs-title{font-size:15px;font-weight:700;margin-bottom:14px;text-align:center;}
+.bs-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:199;display:none;}
+.bs-overlay.open{display:block;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-logo">
+    <div class="header-icon">📡</div>
+    <span class="header-title">TeleStream</span>
+  </div>
+  <div class="header-right">
+    <div class="live-pill" id="livePill">● LIVE</div>
+    <div class="status-dot" id="syncDot"></div>
+  </div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="goTab('stream')" id="tab-stream">البث <span class="tbadge" id="tb-stream">0</span></div>
+  <div class="tab" onclick="goTab('iptv')" id="tab-iptv">📺 IPTV <span class="tbadge" id="tb-iptv">0</span></div>
+  <div class="tab" onclick="goTab('channels')" id="tab-channels">القنوات <span class="tbadge" id="tb-channels">0</span></div>
+  <div class="tab" onclick="goTab('settings')" id="tab-settings">⚙️</div>
+</div>
+
+<!-- ══ STREAM ══ -->
+<div class="page active" id="page-stream">
+
+  <!-- SLOT SELECTOR -->
+  <div class="slot-selector" id="slotSelector"></div>
+
+  <!-- STATS -->
+  <div class="stats-row">
+    <div class="stat-box"><div class="stat-val" id="stDur">--:--</div><div class="stat-lbl">المدة</div></div>
+    <div class="stat-box"><div class="stat-val" id="stSwitch">0</div><div class="stat-lbl">تبديل</div></div>
+    <div class="stat-box"><div class="stat-val" id="stFps">0</div><div class="stat-lbl">FPS</div></div>
+    <div class="stat-box"><div class="stat-val" id="stKbps">0</div><div class="stat-lbl">Kbps</div></div>
+  </div>
+
+  <!-- CURRENT SLOT -->
+  <div class="card">
+    <div class="card-head">
+      <span class="card-title" id="slotCardTitle">قناة البث</span>
+      <button class="btn btn-sm btn-sec" onclick="openAddSheet()" style="width:auto;">＋ إضافة قناة</button>
+    </div>
+    <div style="padding:10px 12px;">
+      <div id="slotQueueList"></div>
+      <div id="slotQueueEmpty" style="padding:16px;text-align:center;color:var(--text3);font-size:13px;">لا توجد قنوات — أضف من IPTV أو اكتب رابطاً</div>
+    </div>
+    <div style="padding:0 12px 12px;">
+      <div style="display:flex;gap:6px;">
+        <div style="flex:1;">
+          <div class="fl">Stream Key تيليجرام <span class="saved-pill" id="slotKeyPill">محفوظ ✓</span></div>
+          <div style="display:flex;gap:6px;">
+            <input class="fi pass" id="slotKey" type="password" placeholder="أدخل Stream Key" oninput="onSlotKeyChange()" style="flex:1;">
+            <button class="btn-icon" onclick="toggleKeyVis('slotKey')">👁</button>
+            <button class="btn-icon play" onclick="saveSlotKey()">💾</button>
+          </div>
+        </div>
+      </div>
+      <div class="toggle-row">
+        <span class="toggle-txt">⟳ تبديل تلقائي عند الانقطاع</span>
+        <div class="mt"><input type="checkbox" id="foOn" checked><label class="mt-l" for="foOn"></label></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LOG -->
+  <div class="card">
+    <div class="card-head"><span class="card-title">سجل الأحداث</span></div>
+    <div style="padding:10px 12px;">
+      <div class="log-list" id="logWrap"><div class="li"><span class="lt">--:--</span><span class="lm">جاري التحميل...</span></div></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══ IPTV ══ -->
+<div class="page" id="page-iptv">
+  <div class="card">
+    <div class="card-head"><span class="card-title">بيانات الاشتراك</span></div>
+    <div class="card-body">
+      <div class="ltab-row">
+        <div class="ltab active" onclick="setLT('xtream',this)">Xtream Codes</div>
+        <div class="ltab" onclick="setLT('m3u',this)">رابط M3U</div>
+      </div>
+      <div id="lt-xtream">
+        <div class="field"><div class="fl">Server URL</div><input class="fi mono" id="xtServer" placeholder="http://server.com:8080"></div>
+        <div class="field"><div class="fl">Username</div><input class="fi mono" id="xtUser" placeholder="username"></div>
+        <div class="field"><div class="fl">Password</div><input class="fi mono" id="xtPass" placeholder="password"></div>
+      </div>
+      <div id="lt-m3u" style="display:none">
+        <div class="field"><div class="fl">رابط M3U</div><input class="fi mono" id="m3uUrl" placeholder="http://provider.com/get.php?..."></div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:4px;">
+        <button class="btn btn-tg" onclick="loadIptv()" id="loadBtn" style="flex:1;">🔍 تحميل القنوات</button>
+        <button class="btn btn-sec btn-sm" onclick="saveIptvLogin()" style="width:auto;padding:13px 14px;">💾</button>
+      </div>
+      <div id="iptvStatus" style="font-size:12px;color:var(--text3);margin-top:8px;text-align:center;"></div>
+    </div>
+  </div>
+
+  <!-- PLAYER -->
+  <div class="card" id="iptvPlayerCard" style="display:none;">
+    <div class="card-head">
+      <span class="card-title" id="iptvNowPlaying">لا يوجد بث</span>
+      <button class="btn-icon" onclick="stopIptvPreview()">■</button>
+    </div>
+    <div class="player-box">
+      <video id="iptvVideo" playsinline controls style="width:100%;height:100%;object-fit:contain;"></video>
+      <div class="player-ov" id="iptvVidOv"><div style="font-size:36px;opacity:.2">📺</div></div>
+    </div>
+    <div style="padding:11px 12px;display:flex;gap:8px;align-items:center;">
+      <select class="fi" id="addToSlotPicker" style="flex:1;"></select>
+      <button class="btn btn-tg btn-sm" onclick="addCurrentToSlot()" style="width:auto;padding:12px 16px;white-space:nowrap;">＋ أضف للبث</button>
+    </div>
+  </div>
+
+  <!-- CHANNEL LIST -->
+  <div class="card" style="padding-bottom:0;overflow:hidden;">
+    <div class="iptv-count" id="iptvCount">0 قناة — حمّل الاشتراك</div>
+    <div style="padding:10px 12px;border-bottom:1px solid var(--border);">
+      <input class="fi" id="iptvSearch" placeholder="🔍 فلتر بالكلمة..." oninput="filterIptv(this.value)" style="font-size:13px;">
+    </div>
+    <div id="iptvChList" style="max-height:50vh;overflow-y:auto;">
+      <div class="iptv-empty">أدخل بيانات الاشتراك وابحث</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ CHANNELS ══ -->
+<div class="page" id="page-channels">
+  <div class="card">
+    <div class="card-head"><span class="card-title">استيراد روابط</span></div>
+    <div class="card-body">
+      <div class="field"><div class="fl">اسم القناة</div><input class="fi" id="sName" placeholder="اسم القناة"></div>
+      <div class="field"><div class="fl">رابط القناة</div><input class="fi mono" id="sUrl" placeholder="http://... أو rtmp://..."></div>
+      <button class="btn btn-tg" onclick="doAddSingle()" style="margin-bottom:14px;">إضافة ＋</button>
+      <div style="border-top:1px solid var(--border);padding-top:12px;">
+        <div class="fl" style="margin-bottom:7px;">استيراد جماعي (كل رابط في سطر)</div>
+        <textarea class="big-ta" id="multiIn" placeholder="http://example.com/ch1.m3u8&#10;http://example.com/ch2.m3u8"></textarea>
+        <button class="btn btn-sec" onclick="doImportMulti()" style="margin-top:8px;">استيراد ＋</button>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-head">
+      <span class="card-title">المكتبة <span id="libCount" style="color:var(--text3);font-weight:400;font-size:11px;"></span></span>
+      <button class="btn btn-sm btn-red" onclick="clearLib()" style="width:auto;">حذف الكل</button>
+    </div>
+    <div style="padding:10px 12px;border-bottom:1px solid var(--border);">
+      <input class="fi" placeholder="🔍 ابحث..." oninput="filterLib(this.value)" style="font-size:13px;">
+    </div>
+    <div id="libList" style="max-height:50vh;overflow-y:auto;"></div>
+  </div>
+</div>
+
+<!-- ══ SETTINGS ══ -->
+<div class="page" id="page-settings">
+  <div class="card">
+    <div class="card-head"><span class="card-title">إعدادات تيليجرام الافتراضية</span></div>
+    <div class="card-body">
+      <div class="field"><div class="fl">RTMP Server</div><input class="fi mono" id="defUrl" value="rtmps://dc4-1.rtmp.t.me/s/"></div>
+      <div class="field"><div class="fl">Stream Key الافتراضي <button class="btn-icon" onclick="toggleKeyVis('defKey')" style="width:24px;height:24px;font-size:12px;">👁</button></div><input class="fi pass" id="defKey" type="password" placeholder="يُطبَّق على القنوات الجديدة"></div>
+      <button class="btn btn-tg" onclick="saveDefSettings()">💾 حفظ</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-head"><span class="card-title">قنوات البث المتعددة</span></div>
+    <div style="padding:12px 14px;">
+      <div id="slotsSettingsList"></div>
+      <button class="btn btn-sec" onclick="addSlot()" id="addSlotSettingsBtn" style="margin-top:8px;">＋ إضافة قناة بث</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-head"><span class="card-title">إعدادات الترميز</span></div>
+    <div class="card-body">
+      <div class="field"><div class="fl">Video Bitrate</div><select class="fi" id="defBitrate"><option value="6000">6000 Kbps</option><option value="4500" selected>4500 Kbps</option><option value="3000">3000 Kbps</option><option value="1500">1500 Kbps</option></select></div>
+      <div class="field"><div class="fl">FPS</div><select class="fi" id="defFps"><option>60</option><option selected>30</option><option>25</option></select></div>
+      <div class="field"><div class="fl">تأخر التبديل التلقائي</div><select class="fi" id="defFoDelay"><option value="5">5 ثواني</option><option value="10" selected>10 ثواني</option><option value="20">20 ثانية</option></select></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-body">
+      <button class="btn btn-red" onclick="clearAllData()">🗑 حذف كل البيانات</button>
+    </div>
+  </div>
+</div>
+
+<!-- GO LIVE BUTTON -->
+<div class="go-live-btn" id="goLiveBar">
+  <button class="go-btn" id="goBtn" onclick="toggleStream()">
+    <span id="goBtnTxt">📡 ابدأ البث على تيليجرام</span>
+  </button>
+</div>
+
+<!-- BOTTOM SHEET: ADD CHANNEL -->
+<div class="bs-overlay" id="bsOverlay" onclick="closeAddSheet()"></div>
+<div class="bottom-sheet" id="bottomSheet">
+  <div class="bs-handle"></div>
+  <div class="bs-title">إضافة قناة للبث</div>
+  <div class="field"><div class="fl">البحث في المكتبة</div><input class="fi" id="sheetSearch" placeholder="ابحث عن قناة..." oninput="searchForSheet(this.value)"></div>
+  <div id="sheetResults" style="margin-bottom:12px;max-height:200px;overflow-y:auto;"></div>
+  <div style="border-top:1px solid var(--border);padding-top:12px;">
+    <div class="fl">أو أدخل رابطاً مباشراً</div>
+    <input class="fi mono" id="sheetUrl" placeholder="http://... أو rtmp://..." style="margin-bottom:8px;">
+    <input class="fi" id="sheetName" placeholder="اسم القناة (اختياري)" style="margin-bottom:8px;">
+    <button class="btn btn-tg" onclick="addFromSheet()">＋ إضافة</button>
+  </div>
+</div>
+
+<script>
+const SERVER = 'https://choir-relate-mil-latter.trycloudflare.com';
+
+// ── STATE ──
+let library = [], slots = [], nextId = 1;
+let activeSlotIdx = 0;
+let isStreaming = false, timerInt = null, statsInt = null;
+let iptvChannels = [], iptvFiltered = [], iptvHls = null, iptvCurrent = null;
+let loginType = 'xtream', libFilterQ = '';
+let hlsObj = null;
+
+// ══ SERVER ══
+async function loadFromServer() {
+  try {
+    const res = await fetch(SERVER + '/api/data');
+    const db = await res.json();
+    library = (db.channels || []).map(c => ({...c, status:'idle'}));
+    library.forEach(c => { if(c.id >= nextId) nextId = c.id + 1; });
+    if (db.streamSlots?.length) {
+      slots = db.streamSlots.map(s => ({...s, streaming:false}));
+    } else {
+      slots = [makeSlot()];
+    }
+    if (db.settings?.defUrl) document.getElementById('defUrl').value = db.settings.defUrl;
+    if (db.settings?.defKey) document.getElementById('defKey').value = db.settings.defKey;
+    if (db.settings?.iptv) loadIptvData(db.settings.iptv);
+    setSyncOk();
+    renderAll();
+    addLog('☁️ تم تحميل البيانات', 's');
+  } catch(e) {
+    setSyncErr();
+    if (!slots.length) slots = [makeSlot()];
+    renderAll();
+    addLog('⚠️ تعذر الاتصال بالسيرفر', 'w');
+  }
+}
+
+async function saveLib() { try { await fetch(SERVER+'/api/channels',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({channels:library})}); } catch(e){} }
+async function saveSlots() { try { await fetch(SERVER+'/api/slots',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({slots:slots.map(s=>({...s,streaming:false}))})}); } catch(e){} }
+async function saveSettings(d) { try { await fetch(SERVER+'/api/settings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)}); } catch(e){} }
+
+function setSyncOk() { document.getElementById('syncDot').className='status-dot ok'; }
+function setSyncErr() { document.getElementById('syncDot').className='status-dot err'; }
+
+// ══ STATUS POLL ══
+function startPoll() {
+  setInterval(async () => {
+    try {
+      const res = await fetch(SERVER + '/status');
+      const data = await res.json();
+      setSyncOk();
+      const sessions = data.sessions || {};
+      const active = Object.keys(sessions);
+      // Update streaming state
+      slots.forEach(slot => {
+        const sid = 'slot_' + slot.id;
+        const wasStreaming = slot.streaming;
+        slot.streaming = !!sessions[sid];
+        if (slot.streaming && sessions[sid]) {
+          slot._fps = sessions[sid].fps;
+          slot._kbps = sessions[sid].kbps;
+          slot._switch = sessions[sid].switchCount;
+          slot._uptime = sessions[sid].uptimeSeconds;
+        }
+      });
+      // update UI
+      const curSlot = slots[activeSlotIdx];
+      if (curSlot?.streaming) {
+        document.getElementById('stFps').textContent = curSlot._fps || 0;
+        document.getElementById('stKbps').textContent = Math.round(parseFloat(curSlot._kbps || 0));
+        document.getElementById('stSwitch').textContent = curSlot._switch || 0;
+        document.getElementById('stDur').textContent = fmtSec(curSlot._uptime || 0, true);
+        isStreaming = true;
+        updateGoBtn(true);
+      } else if (!curSlot?.streaming && isStreaming) {
+        isStreaming = false;
+        updateGoBtn(false);
+        document.getElementById('stDur').textContent = '--:--';
+        document.getElementById('stFps').textContent = '0';
+        document.getElementById('stKbps').textContent = '0';
+      }
+      renderSlotSelector();
+      // live pill
+      const anyLive = slots.some(s=>s.streaming);
+      document.getElementById('livePill').classList.toggle('v', anyLive);
+    } catch(e) { setSyncErr(); }
+  }, 3000);
+}
+
+// ══ SLOTS ══
+function makeSlot() {
+  return {
+    id: nextId++,
+    name: 'قناة ' + (slots.length + 1),
+    channels: [],
+    tgKey: document.getElementById('defKey')?.value || '',
+    tgUrl: 'rtmps://dc4-1.rtmp.t.me/s/',
+    bitrate: 4500, fps: 30, foDelay: 10,
+    streaming: false,
+    _fps:'0', _kbps:'0', _switch:0, _uptime:0
+  };
+}
+
+function addSlot() {
+  if (slots.length >= 4) { addLog('الحد الأقصى 4 قنوات', 'w'); return; }
+  slots.push(makeSlot());
+  saveSlots(); renderAll();
+  activeSlotIdx = slots.length - 1;
+  renderCurrentSlot();
+}
+
+function renderAll() {
+  renderSlotSelector();
+  renderCurrentSlot();
+  renderLib();
+  renderSlotPickers();
+  renderSlotsSettings();
+}
+
+function renderSlotSelector() {
+  const el = document.getElementById('slotSelector');
+  el.innerHTML = '';
+  slots.forEach((slot, i) => {
+    const btn = document.createElement('button');
+    const isActive = i === activeSlotIdx;
+    btn.className = 'slot-btn' + (isActive ? ' active-slot' : '') + (slot.streaming ? ' streaming-slot' : '');
+    btn.textContent = (slot.streaming ? '🔴 ' : '') + slot.name;
+    btn.onclick = () => { activeSlotIdx = i; renderAll(); };
+    el.appendChild(btn);
+  });
+  if (slots.length < 4) {
+    const add = document.createElement('button');
+    add.className = 'slot-btn';
+    add.textContent = '＋';
+    add.onclick = addSlot;
+    el.appendChild(add);
+  }
+}
+
+function renderCurrentSlot() {
+  const slot = slots[activeSlotIdx];
+  if (!slot) return;
+  document.getElementById('slotCardTitle').textContent = slot.name;
+  const keyEl = document.getElementById('slotKey');
+  if (keyEl) keyEl.value = slot.tgKey || '';
+  document.getElementById('slotKeyPill').classList.toggle('v', !!slot.tgKey);
+  isStreaming = slot.streaming;
+  updateGoBtn(slot.streaming);
+  if (slot.streaming) {
+    document.getElementById('stFps').textContent = slot._fps || 0;
+    document.getElementById('stKbps').textContent = Math.round(parseFloat(slot._kbps || 0));
+    document.getElementById('stSwitch').textContent = slot._switch || 0;
+    document.getElementById('stDur').textContent = fmtSec(slot._uptime || 0, true);
+  } else {
+    document.getElementById('stDur').textContent = '--:--';
+    document.getElementById('stFps').textContent = '0';
+    document.getElementById('stKbps').textContent = '0';
+    document.getElementById('stSwitch').textContent = '0';
+  }
+  const list = document.getElementById('slotQueueList');
+  const empty = document.getElementById('slotQueueEmpty');
+  if (!slot.channels.length) { list.innerHTML = ''; empty.style.display = ''; return; }
+  empty.style.display = 'none';
+  list.innerHTML = '';
+  slot.channels.forEach((ch, i) => {
+    const d = document.createElement('div');
+    d.className = 'stream-item' + (i===0&&slot.streaming?' active-src':'');
+    d.innerHTML = `${i===0&&slot.streaming?'<div class="active-tag">LIVE</div>':''}
+<div class="si-dot${slot.streaming&&i===0?' ok':''}"></div>
+<div class="si-info"><div class="si-name">${esc(ch.name)}</div><div class="si-url">${esc(ch.url)}</div></div>
+<div class="si-acts">
+  <button class="btn-icon del" onclick="removeFromSlot(${i})" style="width:32px;height:32px;font-size:12px;">✕</button>
+</div>`;
+    list.appendChild(d);
+  });
+}
+
+function removeFromSlot(idx) {
+  const slot = slots[activeSlotIdx];
+  if (!slot) return;
+  slot.channels.splice(idx, 1);
+  saveSlots(); renderCurrentSlot();
+}
+
+function addChToSlot(slotIdx, ch) {
+  const slot = slots[slotIdx];
+  if (!slot) return;
+  if (slot.channels.find(c=>c.url===ch.url)) { addLog('القناة موجودة', 'w'); return; }
+  slot.channels.push({name:ch.name, url:ch.url});
+  saveSlots(); renderCurrentSlot();
+  addLog('✅ أُضيف: '+ch.name, 's');
+}
+
+function onSlotKeyChange() { document.getElementById('slotKeyPill').classList.remove('v'); }
+function saveSlotKey() {
+  const slot = slots[activeSlotIdx]; if(!slot) return;
+  slot.tgKey = document.getElementById('slotKey').value.trim();
+  document.getElementById('slotKeyPill').classList.add('v');
+  saveSlots(); addLog('💾 تم حفظ المفتاح', 's');
+}
+
+// ══ STREAM ══
+async function toggleStream() {
+  const slot = slots[activeSlotIdx]; if(!slot) return;
+  if (slot.streaming) {
+    try { await fetch(SERVER+'/stop', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({sessionId:'slot_'+slot.id})}); } catch(e){}
+    slot.streaming = false; isStreaming = false;
+    updateGoBtn(false); renderCurrentSlot();
+    addLog('⏹ تم إيقاف البث', 'w'); return;
+  }
+  if (!slot.tgKey) { addLog('⚠️ أدخل Stream Key أولاً', 'w'); return; }
+  if (!slot.channels.length) { addLog('⚠️ أضف قنوات للبث', 'w'); openAddSheet(); return; }
+
+  document.getElementById('goBtn').className = 'go-btn connecting';
+  document.getElementById('goBtnTxt').textContent = '⏳ جاري الاتصال...';
+  addLog('🔄 جاري تشغيل البث...', 'i');
+
+  const payload = {
+    sessionId: 'slot_' + slot.id,
+    name: slot.name,
+    sources: slot.channels.map((ch,i)=>({name:ch.name,url:ch.url,priority:i+1})),
+    telegram: { streamKey: slot.tgKey, rtmpUrl: slot.tgUrl||'rtmps://dc4-1.rtmp.t.me/s/' },
+    encode: { bitrate: parseInt(document.getElementById('defBitrate').value)||4500, fps: parseInt(document.getElementById('defFps').value)||30 },
+    failover: document.getElementById('foOn').checked,
+    failoverDelaySec: parseInt(document.getElementById('defFoDelay').value)||10
+  };
+
+  try {
+    const res = await fetch(SERVER+'/start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const d = await res.json();
+    if(!d.ok) throw new Error(d.error||'خطأ');
+    slot.streaming = true; isStreaming = true;
+    updateGoBtn(true); renderCurrentSlot();
+    addLog('✅ البث بدأ: '+slot.name, 's');
+  } catch(e) {
+    updateGoBtn(false); addLog('❌ '+e.message, 'e');
+  }
+}
+
+function updateGoBtn(streaming) {
+  const btn = document.getElementById('goBtn');
+  const txt = document.getElementById('goBtnTxt');
+  const slot = slots[activeSlotIdx];
+  if (streaming) {
+    btn.className = 'go-btn streaming';
+    txt.innerHTML = '<div class="btn-rec"></div><span>إيقاف البث — '+esc(slot?.name||'')+'</span>';
+  } else {
+    btn.className = 'go-btn';
+    txt.textContent = '📡 ابدأ البث — '+(slot?.name||'');
+  }
+}
+
+// ══ BOTTOM SHEET ══
+function openAddSheet() {
+  document.getElementById('bottomSheet').classList.add('open');
+  document.getElementById('bsOverlay').classList.add('open');
+  document.getElementById('sheetSearch').focus();
+}
+function closeAddSheet() {
+  document.getElementById('bottomSheet').classList.remove('open');
+  document.getElementById('bsOverlay').classList.remove('open');
+  document.getElementById('sheetSearch').value='';
+  document.getElementById('sheetResults').innerHTML='';
+  document.getElementById('sheetUrl').value='';
+  document.getElementById('sheetName').value='';
+}
+function searchForSheet(q) {
+  const res = document.getElementById('sheetResults');
+  if (!q) { res.innerHTML=''; return; }
+  const matches = library.filter(c=>(c.name+c.url).toLowerCase().includes(q.toLowerCase())).slice(0,10);
+  if (!matches.length) { res.innerHTML='<div style="padding:10px;color:var(--text3);font-size:12px;text-align:center;">لا توجد نتائج</div>'; return; }
+  res.innerHTML = '';
+  matches.forEach(ch => {
+    const d = document.createElement('div');
+    d.className = 'stream-item';
+    d.style.marginBottom = '6px';
+    d.innerHTML = `<div class="si-info"><div class="si-name">${esc(ch.name)}</div></div><button class="btn-icon add" onclick="addChToSlot(${activeSlotIdx},{name:'${esc(ch.name)}',url:'${esc(ch.url)}'});closeAddSheet();" style="width:32px;height:32px;font-size:14px;">＋</button>`;
+    res.appendChild(d);
+  });
+}
+function addFromSheet() {
+  const url = document.getElementById('sheetUrl').value.trim();
+  const name = document.getElementById('sheetName').value.trim() || exName(url);
+  if (!url) return;
+  if (!library.find(c=>c.url===url)) { library.push({id:nextId++,name,url,status:'idle'}); saveLib(); renderLib(); }
+  addChToSlot(activeSlotIdx, {name, url});
+  closeAddSheet();
+}
+
+// ══ IPTV ══
+function setLT(type, el) {
+  loginType=type;
+  document.querySelectorAll('.ltab').forEach(e=>e.classList.remove('active')); el.classList.add('active');
+  document.getElementById('lt-xtream').style.display=type==='xtream'?'':'none';
+  document.getElementById('lt-m3u').style.display=type==='m3u'?'':'none';
+}
+function renderSlotPickers() {
+  const pick = document.getElementById('addToSlotPicker');
+  if (!pick) return;
+  pick.innerHTML = slots.map((s,i)=>`<option value="${i}">${esc(s.name)}</option>`).join('');
+  pick.value = activeSlotIdx;
+}
+async function loadIptv() {
+  const btn=document.getElementById('loadBtn');
+  btn.textContent='⏳ جاري التحميل...'; btn.disabled=true;
+  document.getElementById('iptvChList').innerHTML='<div class="iptv-loading">⏳ جاري التحميل...</div>';
+  try {
+    let raw=[];
+    if(loginType==='xtream'){
+      const server=document.getElementById('xtServer').value.trim();
+      const user=document.getElementById('xtUser').value.trim();
+      const pass=document.getElementById('xtPass').value.trim();
+      if(!server||!user||!pass) throw new Error('أدخل بيانات الاشتراك');
+      const res=await fetch(`${SERVER}/proxy/xtream?server=${encodeURIComponent(server)}&username=${encodeURIComponent(user)}&password=${encodeURIComponent(pass)}`);
+      if(!res.ok) throw new Error('HTTP '+res.status);
+      const data=await res.json();
+      if(!Array.isArray(data)) throw new Error('استجابة غير صحيحة');
+      raw=data.map(ch=>({id:ch.stream_id,name:ch.name||'قناة',group:ch.category_name||'',logo:ch.stream_icon||'',url:`${server.replace(/\/$/,'')}/live/${user}/${pass}/${ch.stream_id}.m3u8`}));
+    } else {
+      const m3uUrl=document.getElementById('m3uUrl').value.trim();
+      if(!m3uUrl) throw new Error('أدخل رابط M3U');
+      const res=await fetch(`${SERVER}/proxy/m3u?url=${encodeURIComponent(m3uUrl)}`);
+      if(!res.ok) throw new Error('HTTP '+res.status);
+      raw=parseM3U(await res.text());
+    }
+    iptvChannels=raw.filter(ch=>!/\/movie\/|\/series\/|\/vod\//i.test(ch.url));
+    iptvFiltered=[...iptvChannels];
+    document.getElementById('tb-iptv').textContent=iptvChannels.length;
+    document.getElementById('iptvStatus').textContent=`✅ ${iptvChannels.length} قناة`;
+    document.getElementById('iptvStatus').style.color='var(--green)';
+    renderIptvList();
+    addLog(`✅ IPTV: ${iptvChannels.length} قناة`,'s');
+  } catch(e) {
+    document.getElementById('iptvChList').innerHTML='<div class="iptv-empty">❌ '+e.message+'</div>';
+    document.getElementById('iptvStatus').textContent='❌ '+e.message;
+    document.getElementById('iptvStatus').style.color='var(--red)';
+    addLog('❌ IPTV: '+e.message,'e');
+  } finally { btn.textContent='🔍 تحميل القنوات'; btn.disabled=false; }
+}
+function parseM3U(text){const lines=text.split('\n');const result=[];let meta={};lines.forEach(line=>{line=line.trim();if(line.startsWith('#EXTINF')){meta={name:(line.match(/tvg-name="([^"]+)"/))?.[1]?.trim()||line.match(/,(.+)$/)?.[1]?.trim()||'قناة',group:line.match(/group-title="([^"]+)"/)?.[ 1]||'',logo:line.match(/tvg-logo="([^"]+)"/)?.[ 1]||''};}else if(line&&/^https?:|^rtmps?:/i.test(line)){result.push({id:Date.now()+Math.random(),name:meta.name||'قناة',group:meta.group||'',logo:meta.logo||'',url:line});meta={};}});return result;}
+function filterIptv(q){iptvFiltered=!q?[...iptvChannels]:iptvChannels.filter(ch=>(ch.name+' '+(ch.group||'')).toLowerCase().includes(q.toLowerCase()));renderIptvList();}
+function renderIptvList(){
+  const list=document.getElementById('iptvChList');
+  document.getElementById('iptvCount').textContent=iptvFiltered.length+' قناة';
+  if(!iptvFiltered.length){list.innerHTML='<div class="iptv-empty">لا توجد نتائج</div>';return;}
+  list.innerHTML='';
+  iptvFiltered.slice(0,300).forEach(ch=>{
+    const isPlay=iptvCurrent?.id===ch.id;
+    const d=document.createElement('div');d.className='iptv-ch-item'+(isPlay?' playing':'');d.onclick=()=>playIptvCh(ch);
+    const logo=ch.logo?`<img class="iptv-logo" src="${esc(ch.logo)}" onerror="this.style.display='none'" loading="lazy">`:`<div class="iptv-logo-ph">📺</div>`;
+    d.innerHTML=`${logo}<div style="flex:1;min-width:0;"><div class="iptv-name">${esc(ch.name)}</div><div class="iptv-grp">${esc(ch.group||'')}</div></div><button class="btn-icon add" onclick="event.stopPropagation();quickAddIptv(${JSON.stringify({name:ch.name,url:ch.url}).replace(/"/g,'&quot;')})" style="width:32px;height:32px;font-size:13px;">＋</button>`;
+    list.appendChild(d);
+  });
+}
+function quickAddIptv(ch){if(typeof ch==='string')ch=JSON.parse(ch);const idx=parseInt(document.getElementById('addToSlotPicker').value)||0;addChToSlot(idx,ch);if(!library.find(c=>c.url===ch.url)){library.push({id:nextId++,name:ch.name,url:ch.url,status:'idle'});saveLib();renderLib();}}
+function playIptvCh(ch){
+  iptvCurrent=ch;
+  const v=document.getElementById('iptvVideo');
+  if(iptvHls){iptvHls.destroy();iptvHls=null;}
+  document.getElementById('iptvPlayerCard').style.display='';
+  document.getElementById('iptvVidOv').classList.add('h');
+  document.getElementById('iptvNowPlaying').textContent=ch.name;
+  renderIptvList();
+  if(Hls&&Hls.isSupported()&&(ch.url.includes('.m3u8')||ch.url.toLowerCase().includes('hls'))){
+    iptvHls=new Hls({enableWorker:true,lowLatencyMode:true,fragLoadingMaxRetry:3});
+    iptvHls.loadSource(ch.url);iptvHls.attachMedia(v);
+    iptvHls.on(Hls.Events.MANIFEST_PARSED,()=>{v.play().catch(()=>{});addLog('▶ '+ch.name,'i');});
+    iptvHls.on(Hls.Events.ERROR,(_,d)=>{if(d.fatal)addLog('❌ '+ch.name,'e');});
+  }else{v.src=ch.url;v.oncanplay=()=>{v.play().catch(()=>{});addLog('▶ '+ch.name,'i');};v.onerror=()=>addLog('❌ '+ch.name,'e');}
+}
+function stopIptvPreview(){const v=document.getElementById('iptvVideo');if(iptvHls){iptvHls.destroy();iptvHls=null;}v.src='';iptvCurrent=null;document.getElementById('iptvPlayerCard').style.display='none';document.getElementById('iptvVidOv').classList.remove('h');document.getElementById('iptvNowPlaying').textContent='لا يوجد بث';}
+function addCurrentToSlot(){
+  if(!iptvCurrent){addLog('⚠️ اختر قناة','w');return;}
+  const idx=parseInt(document.getElementById('addToSlotPicker').value)||0;
+  addChToSlot(idx,{name:iptvCurrent.name,url:iptvCurrent.url});
+  if(!library.find(c=>c.url===iptvCurrent.url)){library.push({id:nextId++,name:iptvCurrent.name,url:iptvCurrent.url,status:'idle'});saveLib();renderLib();}
+}
+function saveIptvLogin(){const data=loginType==='xtream'?{type:'xtream',server:document.getElementById('xtServer').value.trim(),user:document.getElementById('xtUser').value.trim(),pass:document.getElementById('xtPass').value.trim()}:{type:'m3u',url:document.getElementById('m3uUrl').value.trim()};saveSettings({iptv:data});addLog('💾 تم حفظ بيانات الاشتراك','s');}
+function loadIptvData(p){if(!p)return;if(p.type==='xtream'){if(p.server)document.getElementById('xtServer').value=p.server;if(p.user)document.getElementById('xtUser').value=p.user;if(p.pass)document.getElementById('xtPass').value=p.pass;}else{setLT('m3u',document.querySelectorAll('.ltab')[1]);if(p.url)document.getElementById('m3uUrl').value=p.url;}}
+
+// ══ LIBRARY ══
+function doAddSingle(){const n=document.getElementById('sName').value.trim();const u=document.getElementById('sUrl').value.trim();if(!u)return;if(!library.find(c=>c.url===u)){library.push({id:nextId++,name:n||exName(u),url:u,status:'idle'});saveLib();renderLib();}document.getElementById('sName').value='';document.getElementById('sUrl').value='';addLog('✅ '+(n||exName(u)),'s');}
+function doImportMulti(){const raw=document.getElementById('multiIn').value.trim();if(!raw)return;const lines=raw.split('\n').map(l=>l.trim()).filter(l=>/^https?:|^rtmps?:/i.test(l));let count=0;lines.forEach(url=>{if(!library.find(c=>c.url===url)){library.push({id:nextId++,name:exName(url),url,status:'idle'});count++;}});document.getElementById('multiIn').value='';saveLib();renderLib();addLog(`✅ استيراد ${count} قناة`,'s');}
+function exName(url){try{let p=url.split('/');let l=p[p.length-1]||p[p.length-2]||'قناة';l=l.replace(/\.m3u8|\.ts|\.mp4/gi,'').replace(/[_-]/g,' ').replace(/playlist/gi,'').replace(/\?.*$/,'').trim();return(l&&l.length>1)?l.slice(0,35):'قناة '+nextId;}catch(e){return'قناة '+nextId;}}
+function renderLib(){
+  const list=document.getElementById('libList');
+  const q=libFilterQ.toLowerCase();
+  const fil=library.filter(c=>!q||(c.name+c.url).toLowerCase().includes(q));
+  document.getElementById('libCount').textContent=`(${library.length})`;
+  document.getElementById('tb-channels').textContent=library.length;
+  if(!fil.length){list.innerHTML=`<div class="iptv-empty">${library.length?'لا نتائج':'لا توجد قنوات'}</div>`;return;}
+  list.innerHTML='';
+  fil.forEach(ch=>{
+    const d=document.createElement('div');d.className='iptv-ch-item';
+    d.innerHTML=`<div class="iptv-logo-ph">📺</div><div style="flex:1;min-width:0;"><div class="iptv-name">${esc(ch.name)}</div><div class="iptv-grp" style="direction:ltr;text-align:left">${esc(ch.url.slice(0,40))}...</div></div><button class="btn-icon add" onclick="addChToSlot(${activeSlotIdx},{name:'${esc(ch.name)}',url:'${esc(ch.url)}'});" style="width:32px;height:32px;font-size:13px;">＋</button><button class="btn-icon del" onclick="delLib(${ch.id})" style="width:32px;height:32px;font-size:12px;">✕</button>`;
+    list.appendChild(d);
+  });
+}
+function filterLib(q){libFilterQ=q;renderLib();}
+function delLib(id){library=library.filter(c=>c.id!==id);saveLib();renderLib();}
+function clearLib(){if(!confirm('حذف كل المكتبة؟'))return;library=[];saveLib();renderLib();}
+
+// ══ SETTINGS ══
+function saveDefSettings(){const url=document.getElementById('defUrl').value.trim();const key=document.getElementById('defKey').value.trim();saveSettings({defUrl:url,defKey:key});addLog('💾 تم حفظ الإعدادات','s');}
+function renderSlotsSettings(){
+  const list=document.getElementById('slotsSettingsList');
+  list.innerHTML='';
+  slots.forEach((slot,i)=>{
+    const d=document.createElement('div');
+    d.style.cssText='display:flex;align-items:center;gap:8px;background:var(--bg2);border:1px solid var(--border);border-radius:9px;padding:10px 12px;margin-bottom:7px;';
+    d.innerHTML=`<input style="flex:1;background:transparent;border:none;outline:none;color:var(--text);font-size:13px;font-weight:600;font-family:inherit;" value="${esc(slot.name)}" onchange="slots[${i}].name=this.value;saveSlots();renderSlotSelector();">
+<span style="font-size:11px;color:${slot.streaming?'var(--green)':'var(--text3)'};">${slot.streaming?'🔴 بث':'متوقف'}</span>
+${slots.length>1?`<button class="btn-icon del" onclick="removeSlot(${i})" style="width:28px;height:28px;font-size:11px;">✕</button>`:''}`;
+    list.appendChild(d);
+  });
+  document.getElementById('addSlotSettingsBtn').style.display = slots.length>=4?'none':'';
+}
+function removeSlot(i){if(slots[i]?.streaming){addLog('⚠️ أوقف البث أولاً','w');return;}if(!confirm('حذف؟'))return;slots.splice(i,1);if(activeSlotIdx>=slots.length)activeSlotIdx=slots.length-1;saveSlots();renderAll();}
+function clearAllData(){if(!confirm('حذف كل شيء؟'))return;fetch(SERVER+'/api/data',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({channels:[],streamSlots:[],settings:{}})}).then(()=>location.reload());}
+
+// ══ TABS ══
+function goTab(t){document.querySelectorAll('.tab').forEach(e=>e.classList.remove('active'));document.querySelectorAll('.page').forEach(e=>e.classList.remove('active'));document.getElementById('tab-'+t).classList.add('active');document.getElementById('page-'+t).classList.add('active');if(t==='stream'){renderCurrentSlot();renderSlotSelector();}if(t==='settings'){renderSlotsSettings();}}
+
+// ══ UTILS ══
+function toggleKeyVis(id){const f=document.getElementById(id);f.type=f.type==='password'?'text':'password';}
+function addLog(msg,type){const w=document.getElementById('logWrap');if(!w)return;const now=new Date();const t=now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0');const d=document.createElement('div');d.className='li';d.innerHTML=`<span class="lt">${t}</span><span class="lm ${type||''}">${msg}</span>`;w.insertBefore(d,w.firstChild);if(w.children.length>30)w.removeChild(w.lastChild);}
+function fmtSec(sec,short){sec=sec||0;const h=Math.floor(sec/3600),m=Math.floor((sec%3600)/60),s=sec%60;if(short)return(h>0?h+':':'')+m.toString().padStart(2,'0')+':'+s.toString().padStart(2,'0');return h.toString().padStart(2,'0')+':'+m.toString().padStart(2,'0')+':'+s.toString().padStart(2,'0');}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+
+// ══ INIT ══
+loadFromServer().then(()=>{ renderSlotPickers(); startPoll(); addLog('✅ جاهز','s'); });
+</script>
+</body>
+</html>
